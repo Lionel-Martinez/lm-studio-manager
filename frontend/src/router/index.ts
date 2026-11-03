@@ -1,21 +1,68 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
+import AppLayout from '@/components/layout/AppLayout.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',
-      name: 'home',
-      component: HomeView,
-    },
-    {
-      path: '/about',
-      name: 'about',
-      // route level code-splitting
-      // this generates a separate chunk (About.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
-      component: () => import('../views/AboutView.vue'),
+      component: AppLayout,
+      children: [
+        {
+          path: '',
+          name: 'dashboard',
+          component: () => import('@/views/HomeView.vue'),
+          meta: {
+            title: 'Dashboard',
+            description: 'Resumen general de LM Studio.',
+          },
+        },
+        {
+          path: 'clientes',
+          name: 'clientes',
+          component: () => import('@/views/ClientsView.vue'),
+          meta: {
+            title: 'Clientes',
+            description: 'Administrá tus contactos y relaciones comerciales.',
+          },
+        },
+        {
+          path: 'servicios',
+          name: 'servicios',
+          component: () => import('@/views/ServicesView.vue'),
+          meta: {
+            title: 'Servicios',
+            description: 'Gestioná los servicios y proyectos contratados.',
+          },
+        },
+        {
+          path: 'pagos',
+          name: 'pagos',
+          component: () => import('@/views/PaymentsView.vue'),
+          meta: {
+            title: 'Pagos',
+            description: 'Controlá ingresos, cuotas y vencimientos.',
+          },
+        },
+        {
+          path: 'reportes',
+          name: 'reportes',
+          component: () => import('@/views/ReportsView.vue'),
+          meta: {
+            title: 'Reportes',
+            description: 'Analizá el rendimiento de tu negocio.',
+          },
+        },
+        {
+          path: 'geografia',
+          name: 'geografia',
+          component: () => import('@/views/GeographyView.vue'),
+          meta: {
+            title: 'Geografía',
+            description: 'Distribución geográfica de tus clientes.',
+          },
+        },
+      ],
     },
   ],
 })
