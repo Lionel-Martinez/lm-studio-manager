@@ -1,4 +1,3 @@
-
 <script setup lang="ts">
 import {
   Wallet,
@@ -10,6 +9,8 @@ import {
 } from 'lucide-vue-next'
 
 import StatCard from '@/components/dashboard/StatCard.vue'
+import RevenueChart from '@/components/dashboard/RevenueChart.vue'
+import ClientDistributionChart from '@/components/dashboard/ClientDistributionChart.vue'
 
 const stats = [
   {
@@ -59,7 +60,6 @@ const stats = [
 
 <template>
   <div class="space-y-7">
-    <!-- Bienvenida -->
     <section>
       <h2 class="text-lg font-semibold text-app-text">
         Resumen general
@@ -70,7 +70,6 @@ const stats = [
       </p>
     </section>
 
-    <!-- Indicadores -->
     <section>
       <div class="mb-4 flex items-center justify-between">
         <h3 class="text-sm font-semibold text-app-text">
@@ -91,35 +90,31 @@ const stats = [
       </div>
     </section>
 
-    <!-- Próximas secciones -->
     <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
       <article class="rounded-xl border border-app-border bg-app-surface p-5">
-        <h3 class="font-semibold text-app-text">
-          Evolución de ingresos
-        </h3>
+        <div class="mb-4">
+          <h3 class="font-semibold text-app-text">
+            Evolución de ingresos
+          </h3>
 
-        <p class="mt-1 text-sm text-app-muted">
-          Acá mostraremos los ingresos mensuales y su evolución.
-        </p>
-
-        <div class="flex min-h-48 items-center justify-center text-sm text-app-muted">
-          Todavía no hay datos financieros.
+          <p class="mt-1 text-sm text-app-muted">
+            Seguimiento mensual de los ingresos de LM Studio.
+          </p>
         </div>
+
+        <RevenueChart />
       </article>
 
-      <article class="rounded-xl border border-app-border bg-app-surface p-5">
-        <h3 class="font-semibold text-app-text">
-          Distribución de clientes
-        </h3>
+    <article class="rounded-xl border border-app-border bg-app-surface p-5">
+        <div class="mb-4">
+          <h3 class="font-semibold text-app-text">Distribución de clientes</h3>
+          <p class="mt-1 text-sm text-app-muted">
+            Países, provincias y localidades con mayor presencia.
+          </p>
+      </div>
 
-        <p class="mt-1 text-sm text-app-muted">
-          Países, provincias y localidades con mayor presencia.
-        </p>
-
-        <div class="flex min-h-48 items-center justify-center text-sm text-app-muted">
-          Todavía no hay clientes registrados.
-        </div>
-      </article>
+    <ClientDistributionChart />
+    </article>
     </section>
   </div>
 </template>
