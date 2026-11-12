@@ -1,0 +1,50 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class Client extends Model
+{
+    protected $fillable = [
+        'first_name',
+        'last_name',
+        'company_name',
+        'tax_id',
+        'email',
+        'phone',
+        'whatsapp',
+        'website',
+        'country_id',
+        'region_id',
+        'locality_id',
+        'first_contact_at',
+        'source',
+        'client_type',
+        'commercial_status',
+        'notes',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'first_contact_at' => 'date',
+        ];
+    }
+
+    public function country(): BelongsTo
+    {
+        return $this->belongsTo(Country::class);
+    }
+
+    public function region(): BelongsTo
+    {
+        return $this->belongsTo(Region::class);
+    }
+
+    public function locality(): BelongsTo
+    {
+        return $this->belongsTo(Locality::class);
+    }
+}
