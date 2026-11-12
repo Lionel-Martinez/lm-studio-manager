@@ -7,26 +7,18 @@ import AppHeader from '@/components/layout/AppHeader.vue'
 
 const route = useRoute()
 
-const pageTitle = computed(() => {
-  return (route.meta.title as string) || 'Dashboard'
-})
-
-const pageDescription = computed(() => {
-  return (route.meta.description as string) || ''
-})
+const pageTitle = computed(() => (route.meta.title as string) || 'Resumen')
+const pageDescription = computed(() => (route.meta.description as string) || '')
 </script>
 
 <template>
-  <div class="flex min-h-screen bg-gray-50 dark:bg-gray-950">
+  <div class="min-h-screen bg-app-bg text-app-text lg:flex">
     <AppSidebar />
 
-    <div class="flex min-w-0 flex-1 flex-col">
-      <AppHeader
-        :title="pageTitle"
-        :description="pageDescription"
-      />
+    <div class="min-w-0 flex-1">
+      <AppHeader :title="pageTitle" :description="pageDescription" />
 
-      <main class="flex-1 p-6">
+      <main class="px-5 py-8 sm:px-8 lg:px-12 lg:pb-14">
         <RouterView />
       </main>
     </div>

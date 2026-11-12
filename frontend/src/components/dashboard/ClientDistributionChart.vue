@@ -1,81 +1,81 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import {
-  Chart as ChartJS,
-  ArcElement,
-  Tooltip,
-  Legend,
-} from 'chart.js'
+import { ArcElement, Chart as ChartJS, Tooltip } from 'chart.js'
 import { Doughnut } from 'vue-chartjs'
 
-ChartJS.register(
-  ArcElement,
-  Tooltip,
-  Legend,
-)
+import EmptyState from '@/components/ui/EmptyState.vue'
+import { useChartColors } from '@/composables/useChartColors'
+import type { ClientDistributionPoint } from '@/types/dashboard'
 
-const hasData = false
+ChartJS.register(ArcElement, Tooltip)
+
+const props = defineProps<{
+  points: ClientDistributionPoint[]
+}>()
+
+const colors = useChartColors()
+
+const hasData = computed(() => props.points.some((p) => p.value > 0))
+const total = computed(() => props.points.reduce((sum, p) => sum + p.value, 0))
+
+const seriesColor = (index: number) => colors.value.series[index % colors.value.series.length]
 
 const chartData = computed(() => ({
-  labels: [],
+  labels: props.points.map((p) => p.label),
   datasets: [
     {
-      label: 'Clientes',
-      data: [],
-      backgroundColor: [
-        '#10b981',
-        '#d6b56d',
-        '#3b82f6',
-        '#8b5cf6',
-        '#f97316',
-      ],
-      borderWidth: 0,
-      hoverOffset: 6,
+      data: props.points.map((p) => p.value),
+      backgroundColor: props.points.map((_, i) => seriesColor(i)),
+      borderColor: colors.value.surface,
+      borderWidth: 2,
     },
   ],
 }))
 
-const chartOptions = {
+const chartOptions = computed(() => ({
   responsive: true,
   maintainAspectRatio: false,
-  cutout: '70%',
+  cutout: '68%',
   plugins: {
-    legend: {
-      display: false,
-    },
+    legend: { display: false },
     tooltip: {
+      backgroundColor: colors.value.text,
+      titleColor: colors.value.surface,
+      bodyColor: colors.value.surface,
+      cornerRadius: 2,
+      displayColors: false,
       callbacks: {
         label: (context: { label: string; parsed: number }) =>
           `${context.label}: ${context.parsed} clientes`,
       },
     },
   },
-}
+}))
 </script>
 
 <template>
-  <div class="relative min-h-56">
-    <div
-      v-if="!hasData"
-      class="flex min-h-56 items-center justify-center text-center"
-    >
-      <div>
-        <p class="text-sm font-medium text-app-text">
-          Todavía no hay clientes registrados
-        </p>
-        <p class="mt-1 text-xs text-app-muted">
-          Acá aparecerá la distribución por ubicación.
-        </p>
+  <EmptyState
+    v-if="!hasData"
+    title="Todavía no hay clientes registrados"
+    description="Acá aparece la distribución por ubicación."
+  />
+
+  <div v-else class="flex flex-wrap items-center gap-6 border-t-2 border-app-rule pt-4">
+    <div class="relative size-44 shrink-0">
+      <Doughnut :data="chartData" :options="chartOptions" />
+
+      <div class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+        <span class="tabular font-display text-3xl font-medium">{{ total }}</span>
+        <span class="text-xs text-app-muted">clientes</span>
       </div>
     </div>
 
-    <div v-else class="flex min-h-56 items-center justify-center">
-      <div class="h-56 w-full max-w-64">
-        <Doughnut
-          :data="chartData"
-          :options="chartOptions"
-        />
-      </div>
-    </div>
+    <ul class="min-w-40 flex-1 space-y-2 text-sm">
+      <li v-for="(point, index) in points" :key="point.label" class="flex items-center gap-2">
+        <i class="inline-block size-3 shrink-0" :style="{ backgroundColor: seriesColor(index) }"></i>
+        <span class="flex-1 truncate">{{ point.label }}</span>
+        <span class="tabular text-app-muted">{{ point.value }}</span>
+      </li>
+    </ul>
   </div>
 </template>

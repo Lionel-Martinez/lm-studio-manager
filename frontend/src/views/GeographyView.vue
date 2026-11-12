@@ -1,12 +1,5 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import {
-  Globe2,
-  MapPinned,
-  MapPin,
-  Users,
-} from 'lucide-vue-next'
-
 import GeographyBreadcrumb from '@/components/geography/GeographyBreadcrumb.vue'
 import GeographyStatCard from '@/components/geography/GeographyStatCard.vue'
 import GeographyRanking, {
@@ -57,7 +50,7 @@ const currentItems = computed(() => {
       return countries.value
     case 'regions':
       return regions.value
-    case 'localities':
+    default:
       return localities.value
   }
 })
@@ -68,7 +61,7 @@ const rankingTitle = computed(() => {
       return 'Ranking de países'
     case 'regions':
       return `Regiones de ${selectedCountry.value?.name ?? ''}`
-    case 'localities':
+    default:
       return `Localidades de ${selectedRegion.value?.name ?? ''}`
   }
 })
@@ -79,17 +72,11 @@ const stats = computed(() => [
     title: 'Ubicaciones',
     value: '—',
     description: 'Se calculará con los datos registrados.',
-    icon: currentLevel.value === 'countries'
-      ? Globe2
-      : currentLevel.value === 'regions'
-        ? MapPinned
-        : MapPin,
   },
   {
     title: 'Clientes',
     value: '—',
     description: 'Clientes asociados a esta selección.',
-    icon: Users,
   },
 ])
 
@@ -115,38 +102,22 @@ function navigateTo(index: number) {
 </script>
 
 <template>
-  <div class="space-y-7">
-    <section>
-      <h2 class="text-lg font-semibold text-app-text">
-        Análisis geográfico
-      </h2>
-      <p class="mt-1 text-sm text-app-muted">
-        Conocé dónde están tus clientes y cómo se distribuyen tus ingresos.
-      </p>
-    </section>
+  <div class="space-y-10">
+    <GeographyBreadcrumb :items="breadcrumbItems" @navigate="navigateTo" />
 
-    <section class="rounded-xl border border-app-border bg-app-surface p-5">
-      <GeographyBreadcrumb
-        :items="breadcrumbItems"
-        @navigate="navigateTo"
-      />
-    </section>
-
-    <section class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+    <dl class="grid grid-cols-1 gap-px border-y border-app-border bg-app-border sm:grid-cols-2">
       <GeographyStatCard
         v-for="stat in stats"
         :key="stat.title"
         v-bind="stat"
       />
-    </section>
+    </dl>
 
-    <section>
-      <GeographyRanking
-        :title="rankingTitle"
-        :items="currentItems"
-        :clickable="currentLevel !== 'localities'"
-        @select="handleSelect"
-      />
-    </section>
+    <GeographyRanking
+      :title="rankingTitle"
+      :items="currentItems"
+      :clickable="currentLevel !== 'localities'"
+      @select="handleSelect"
+    />
   </div>
 </template>

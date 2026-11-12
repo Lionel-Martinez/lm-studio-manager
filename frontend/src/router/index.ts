@@ -13,7 +13,7 @@ const router = createRouter({
           name: 'dashboard',
           component: () => import('@/views/HomeView.vue'),
           meta: {
-            title: 'Dashboard',
+            title: 'Resumen',
             description: 'Resumen general de LM Studio.',
           },
         },

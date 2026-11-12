@@ -1,7 +1,10 @@
+<script setup lang="ts">
+import EmptyState from '@/components/ui/EmptyState.vue'
+</script>
+
 <template>
-  <div>
-    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
-      Próximamente: gestión de clientes
-    </h2>
-  </div>
+  <EmptyState
+    title="Gestión de clientes en construcción"
+    description="Acá vas a registrar clientes con su fecha de ingreso, inicio y entrega estimadas, y consultar sus proyectos y pagos."
+  />
 </template>

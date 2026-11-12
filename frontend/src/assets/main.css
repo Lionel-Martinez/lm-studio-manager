@@ -1,32 +1,28 @@
 @import './base.css';
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-@import "flowbite/src/themes/default";
-
-@plugin "flowbite/plugin";
-
 @theme inline {
-  --color-brand-50: #ecfdf5;
-  --color-brand-100: #d1fae5;
-  --color-brand-200: #a7f3d0;
-  --color-brand-300: #6ee7b7;
-  --color-brand-400: #34d399;
-  --color-brand-500: #10b981;
-  --color-brand-600: #059669;
-  --color-brand-700: #047857;
-  --color-brand-800: #065f46;
-  --color-brand-900: #064e3b;
-
-  --color-gold: #d6b56d;
+  --font-sans: 'Public Sans Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Newsreader Variable', Georgia, serif;
 
   --color-app-bg: var(--app-bg);
+  --color-app-sunken: var(--app-sunken);
   --color-app-surface: var(--app-surface);
   --color-app-elevated: var(--app-elevated);
   --color-app-border: var(--app-border);
+  --color-app-rule: var(--app-rule);
   --color-app-text: var(--app-text);
   --color-app-muted: var(--app-muted);
+  --color-app-accent: var(--app-accent);
+  --color-app-accent-soft: var(--app-accent-soft);
+  --color-app-on-accent: var(--app-on-accent);
+  --color-app-bar: var(--app-bar);
+  --color-app-danger: var(--app-danger);
 }
 
-@source "../node_modules/flowbite";
+/* Números alineados en tablas e indicadores. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}

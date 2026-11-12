@@ -1,120 +1,86 @@
 <script setup lang="ts">
-import {
-  Wallet,
-  Users,
-  UserRoundSearch,
-  Clock,
-  AlertCircle,
-  Gift,
-} from 'lucide-vue-next'
+import { computed } from 'vue'
 
-import StatCard from '@/components/dashboard/StatCard.vue'
-import RevenueChart from '@/components/dashboard/RevenueChart.vue'
 import ClientDistributionChart from '@/components/dashboard/ClientDistributionChart.vue'
+import DeliveryCalendar from '@/components/dashboard/DeliveryCalendar.vue'
+import KpiStrip, { type KpiItem } from '@/components/dashboard/KpiStrip.vue'
+import RevenueChart from '@/components/dashboard/RevenueChart.vue'
+import UpcomingPayments from '@/components/dashboard/UpcomingPayments.vue'
+import WaitingList from '@/components/dashboard/WaitingList.vue'
+import SectionBlock from '@/components/ui/SectionBlock.vue'
+import { useDashboard } from '@/composables/useDashboard'
+import { formatCurrency } from '@/utils/dates'
 
-const stats = [
+const { isSample, projects, payments, revenue, distribution, waitingList, kpis } = useDashboard()
+
+const kpiItems = computed<KpiItem[]>(() => [
   {
-    title: 'Ingresos del mes',
-    value: '—',
-    description: 'Sin datos registrados todavía',
-    icon: Wallet,
-    accent: 'green' as const,
+    label: 'Ingresos del mes',
+    value: formatCurrency(kpis.value.monthlyRevenue),
+    note: 'Pagos acreditados en el mes',
   },
   {
-    title: 'Clientes activos',
-    value: '0',
-    description: 'Clientes con servicios activos',
-    icon: Users,
-    accent: 'blue' as const,
+    label: 'Clientes activos',
+    value: String(kpis.value.activeClients),
+    note: 'Con servicios en curso',
   },
   {
-    title: 'Clientes potenciales',
-    value: '0',
-    description: 'Contactos en seguimiento comercial',
-    icon: UserRoundSearch,
-    accent: 'gold' as const,
+    label: 'Clientes potenciales',
+    value: String(kpis.value.prospects),
+    note: 'En seguimiento o en espera',
   },
   {
-    title: 'Pagos pendientes',
-    value: '0',
-    description: 'Pagos pendientes de acreditación',
-    icon: Clock,
-    accent: 'gold' as const,
+    label: 'Pagos pendientes',
+    value: String(kpis.value.pendingPayments),
+    note: 'Todavía sin acreditar',
   },
   {
-    title: 'Cuotas vencidas',
-    value: '0',
-    description: 'Cuotas que requieren seguimiento',
-    icon: AlertCircle,
-    accent: 'red' as const,
+    label: 'Cuotas vencidas',
+    value: String(kpis.value.overdueCount),
+    note: kpis.value.overdueCount > 0 ? `Suman ${formatCurrency(kpis.value.overdueAmount)}` : 'Al día',
+    tone: kpis.value.overdueCount > 0 ? 'danger' : 'default',
   },
   {
-    title: 'Pruebas gratuitas',
-    value: '0',
-    description: 'Períodos de prueba actualmente activos',
-    icon: Gift,
-    accent: 'green' as const,
+    label: 'Pruebas gratuitas',
+    value: String(kpis.value.freeTrials),
+    note: 'Períodos de prueba activos',
   },
-]
+])
 </script>
 
 <template>
-  <div class="space-y-7">
-    <section>
-      <h2 class="text-lg font-semibold text-app-text">
-        Resumen general
-      </h2>
+  <div class="space-y-10">
+    <p v-if="isSample" class="text-xs text-app-muted">
+      Datos de ejemplo: se reemplazan por los reales cuando se conecte la base de datos.
+    </p>
 
-      <p class="mt-1 text-sm text-app-muted">
-        Acá podés consultar el estado comercial y financiero de LM Studio.
-      </p>
-    </section>
+    <KpiStrip :items="kpiItems" />
 
-    <section>
-      <div class="mb-4 flex items-center justify-between">
-        <h3 class="text-sm font-semibold text-app-text">
-          Indicadores principales
-        </h3>
+    <SectionBlock
+      title="Calendario de entregas"
+      description="Cuándo entra cada cliente y cuándo se entrega su proyecto."
+    >
+      <DeliveryCalendar :projects="projects" />
+    </SectionBlock>
 
-        <span class="rounded-md border border-app-border bg-app-elevated px-2.5 py-1 text-xs text-app-muted">
-          Datos iniciales
-        </span>
-      </div>
+    <div class="grid gap-10 xl:grid-cols-2">
+      <SectionBlock title="Cobros próximos" description="Ordenados por fecha de vencimiento.">
+        <UpcomingPayments :payments="payments" />
+      </SectionBlock>
 
-      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        <StatCard
-          v-for="stat in stats"
-          :key="stat.title"
-          v-bind="stat"
-        />
-      </div>
-    </section>
+      <SectionBlock title="Lista de espera" description="Clientes que todavía no empezaron.">
+        <WaitingList :items="waitingList" />
+      </SectionBlock>
+    </div>
 
-    <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
-      <article class="rounded-xl border border-app-border bg-app-surface p-5">
-        <div class="mb-4">
-          <h3 class="font-semibold text-app-text">
-            Evolución de ingresos
-          </h3>
+    <div class="grid gap-10 xl:grid-cols-2">
+      <SectionBlock title="Evolución de ingresos" description="Últimos seis meses.">
+        <RevenueChart :points="revenue" />
+      </SectionBlock>
 
-          <p class="mt-1 text-sm text-app-muted">
-            Seguimiento mensual de los ingresos de LM Studio.
-          </p>
-        </div>
-
-        <RevenueChart />
-      </article>
-
-    <article class="rounded-xl border border-app-border bg-app-surface p-5">
-        <div class="mb-4">
-          <h3 class="font-semibold text-app-text">Distribución de clientes</h3>
-          <p class="mt-1 text-sm text-app-muted">
-            Países, provincias y localidades con mayor presencia.
-          </p>
-      </div>
-
-    <ClientDistributionChart />
-    </article>
-    </section>
+      <SectionBlock title="Distribución de clientes" description="Por localidad.">
+        <ClientDistributionChart :points="distribution" />
+      </SectionBlock>
+    </div>
   </div>
 </template>

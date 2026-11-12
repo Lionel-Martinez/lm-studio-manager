@@ -1,100 +1,74 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
-import {
-  LayoutDashboard,
-  Users,
-  Layers3,
-  Wallet,
-  ChartNoAxesCombined,
-  MapPinned,
-  Settings,
-  ChevronLeft,
-  Code2,
-} from 'lucide-vue-next'
+
+import { useTheme } from '@/composables/useTheme'
 
 const navigation = [
-  {
-    title: 'GENERAL',
-    items: [
-      { name: 'Dashboard', path: '/', icon: LayoutDashboard },
-    ],
-  },
-  {
-    title: 'GESTIÓN COMERCIAL',
-    items: [
-      { name: 'Clientes', path: '/clientes', icon: Users },
-      { name: 'Servicios', path: '/servicios', icon: Layers3 },
-      { name: 'Pagos', path: '/pagos', icon: Wallet },
-      { name: 'Reportes', path: '/reportes', icon: ChartNoAxesCombined },
-    ],
-  },
-  {
-    title: 'ANÁLISIS',
-    items: [
-      { name: 'Geografía', path: '/geografia', icon: MapPinned },
-    ],
-  },
+  { name: 'Resumen', path: '/' },
+  { name: 'Clientes', path: '/clientes' },
+  { name: 'Servicios', path: '/servicios' },
+  { name: 'Pagos', path: '/pagos' },
+  { name: 'Reportes', path: '/reportes' },
+  { name: 'Geografía', path: '/geografia' },
 ]
+
+const linkBase =
+  'block whitespace-nowrap border-b-2 px-1 py-2 text-sm transition-colors lg:border-b-0 lg:border-l-2 lg:py-1.5 lg:pl-3 lg:pr-0'
+const linkActive = 'border-app-accent font-semibold text-app-text'
+const linkIdle = 'border-transparent text-app-muted hover:text-app-text'
+
+const { isDark, setTheme } = useTheme()
 </script>
 
 <template>
-  <aside class="flex h-screen w-64 shrink-0 flex-col border-r border-app-border bg-app-surface">
-    <!-- Marca -->
-    <div class="flex h-20 items-center gap-3 border-b border-app-border px-6">
-      <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-500/10 text-brand-500">
-        <Code2 :size="23" />
-      </div>
-
-      <div>
-        <h1 class="text-base font-bold tracking-tight text-app-text">LM Studio</h1>
-        <p class="text-xs text-app-muted">Client Manager</p>
-      </div>
+  <aside
+    class="flex flex-col gap-5 border-b border-app-border bg-app-sunken px-5 py-5 lg:sticky lg:top-0 lg:h-screen lg:w-60 lg:shrink-0 lg:gap-10 lg:border-b-0 lg:border-r lg:px-7 lg:py-9"
+  >
+    <div class="flex items-baseline justify-between gap-3 lg:block">
+      <p class="font-display text-2xl font-semibold tracking-tight">LM Studio</p>
+      <p class="text-xs text-app-muted lg:mt-0.5">Cuaderno de clientes</p>
     </div>
 
-    <!-- Navegación -->
-    <nav class="flex-1 space-y-8 overflow-y-auto px-4 py-7">
-      <div v-for="group in navigation" :key="group.title">
-        <h2 class="mb-3 px-3 text-[10px] font-bold tracking-[0.15em] text-app-muted">
-          {{ group.title }}
-        </h2>
-
-        <ul class="space-y-1">
-          <li v-for="item in group.items" :key="item.path">
-            <RouterLink
-              :to="item.path"
-              class="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-app-muted transition-colors hover:bg-app-elevated hover:text-app-text"
-              active-class="!bg-brand-500/10 !text-brand-500"
-            >
-              <component :is="item.icon" :size="19" class="shrink-0" />
-              <span>{{ item.name }}</span>
-            </RouterLink>
-          </li>
-        </ul>
-      </div>
+    <nav aria-label="Principal" class="-mx-1 flex gap-1 overflow-x-auto px-1 lg:mx-0 lg:flex-col lg:gap-0.5 lg:overflow-visible lg:px-0">
+      <RouterLink
+        v-for="item in navigation"
+        :key="item.path"
+        :to="item.path"
+        custom
+        v-slot="{ href, navigate, isActive, isExactActive }"
+      >
+        <a
+          :href="href"
+          :aria-current="(item.path === '/' ? isExactActive : isActive) ? 'page' : undefined"
+          :class="[linkBase, (item.path === '/' ? isExactActive : isActive) ? linkActive : linkIdle]"
+          @click="navigate"
+        >
+          {{ item.name }}
+        </a>
+      </RouterLink>
     </nav>
 
-    <!-- Configuración -->
-    <div class="border-t border-app-border p-4">
+    <div class="flex items-center gap-2 text-xs text-app-muted lg:mt-auto">
+      <span>Tema</span>
       <button
         type="button"
-        class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-app-muted transition hover:bg-app-elevated hover:text-app-text"
+        class="cursor-pointer underline-offset-4 transition-colors hover:text-app-text"
+        :class="!isDark ? 'font-semibold text-app-text underline' : ''"
+        :aria-pressed="!isDark"
+        @click="setTheme('light')"
       >
-        <Settings :size="19" />
-        Configuración
+        Claro
       </button>
-
-      <div class="mt-4 flex items-center gap-3 rounded-xl bg-app-elevated p-3">
-        <div class="flex h-9 w-9 items-center justify-center rounded-full bg-brand-500/15 text-sm font-bold text-brand-500">
-          LM
-        </div>
-
-        <div class="min-w-0 flex-1">
-          <p class="truncate text-sm font-semibold text-app-text">Administrador</p>
-          <p class="truncate text-xs text-app-muted">LM Studio</p>
-        </div>
-
-        <ChevronLeft :size="16" class="rotate-180 text-app-muted" />
-      </div>
+      <span aria-hidden="true">·</span>
+      <button
+        type="button"
+        class="cursor-pointer underline-offset-4 transition-colors hover:text-app-text"
+        :class="isDark ? 'font-semibold text-app-text underline' : ''"
+        :aria-pressed="isDark"
+        @click="setTheme('dark')"
+      >
+        Oscuro
+      </button>
     </div>
   </aside>
 </template>

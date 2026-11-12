@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ChevronRight, Globe2 } from 'lucide-vue-next'
+import { ChevronRight } from 'lucide-vue-next'
 
 export interface GeographyBreadcrumbItem {
   label: string
@@ -16,26 +16,27 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <nav aria-label="Ruta geográfica" class="flex flex-wrap items-center gap-2">
+  <nav aria-label="Ruta geográfica" class="flex flex-wrap items-center gap-2 text-sm">
     <button
       type="button"
-      class="flex items-center gap-2 text-sm font-medium text-app-muted transition hover:text-brand-500"
+      class="cursor-pointer transition-colors hover:text-app-accent"
+      :class="items.length === 0 ? 'font-semibold text-app-text' : 'text-app-muted'"
+      :aria-current="items.length === 0 ? 'page' : undefined"
       @click="emit('navigate', 0)"
     >
-      <Globe2 :size="16" />
       Países
     </button>
 
     <template v-for="(item, index) in items" :key="item.id">
-      <ChevronRight :size="15" class="text-app-muted" />
+      <ChevronRight :size="14" class="text-app-muted" aria-hidden="true" />
 
       <button
         type="button"
-        class="text-sm font-medium transition"
+        class="cursor-pointer transition-colors"
         :class="
           index === items.length - 1
-            ? 'text-app-text'
-            : 'text-app-muted hover:text-brand-500'
+            ? 'font-semibold text-app-text'
+            : 'text-app-muted hover:text-app-accent'
         "
         :aria-current="index === items.length - 1 ? 'page' : undefined"
         @click="emit('navigate', index + 1)"
