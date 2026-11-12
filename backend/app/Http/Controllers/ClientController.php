@@ -4,10 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Enums\ProjectStatus;
 use App\Http\Requests\StoreClientRequest;
+use App\Http\Requests\UpdateClientRequest;
+use App\Models\AuditLog;
 use App\Http\Resources\ClientResource;
 use App\Models\Client;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
@@ -63,6 +66,8 @@ class ClientController extends Controller
             return $client;
         });
 
+        AuditLog::record('client.created', $client, ['name' => $client->display_name]);
+
         return ClientResource::make($client->load('projects'))
             ->response()
             ->setStatusCode(201);
@@ -71,5 +76,24 @@ class ClientController extends Controller
     public function show(Client $client): ClientResource
     {
         return ClientResource::make($client->load('projects'));
+    }
+
+    public function update(UpdateClientRequest $request, Client $client): ClientResource
+    {
+        $client->update($request->validated());
+
+        AuditLog::record('client.updated', $client, ['name' => $client->display_name]);
+
+        return ClientResource::make($client->refresh()->load('projects'));
+    }
+
+    /** Baja lógica: el cliente deja de verse pero su historial se conserva y se puede recuperar. */
+    public function destroy(Client $client): Response
+    {
+        $client->delete();
+
+        AuditLog::record('client.deleted', $client, ['name' => $client->display_name]);
+
+        return response()->noContent();
     }
 }

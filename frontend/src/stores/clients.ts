@@ -2,7 +2,7 @@ import { ref } from 'vue'
 import { defineStore } from 'pinia'
 
 import { api } from '@/lib/api'
-import type { Client, NewClientPayload, PaginationMeta } from '@/types/client'
+import type { Client, ClientDataPayload, NewClientPayload, PaginationMeta } from '@/types/client'
 
 export const useClientsStore = defineStore('clients', () => {
   const items = ref<Client[]>([])
@@ -12,6 +12,8 @@ export const useClientsStore = defineStore('clients', () => {
   const loadError = ref<string | null>(null)
 
   const dialogOpen = ref(false)
+  /** Cliente que se está editando; `null` cuando el diálogo es para crear uno nuevo. */
+  const editing = ref<Client | null>(null)
 
   /** Carga una página. La página 1 reemplaza la lista; las siguientes se agregan al final. */
   async function fetchClients(page = 1) {
@@ -45,7 +47,20 @@ export const useClientsStore = defineStore('clients', () => {
     return data.data
   }
 
-  function openDialog() {
+  async function updateClient(id: number, payload: ClientDataPayload): Promise<Client> {
+    const { data } = await api.put(`/clients/${id}`, payload)
+    await fetchClients(1)
+    return data.data
+  }
+
+  /** Baja lógica en el backend: el cliente se oculta pero su historial se conserva. */
+  async function deleteClient(id: number) {
+    await api.delete(`/clients/${id}`)
+    await fetchClients(1)
+  }
+
+  function openDialog(client: Client | null = null) {
+    editing.value = client
     dialogOpen.value = true
   }
 
@@ -60,9 +75,12 @@ export const useClientsStore = defineStore('clients', () => {
     loading,
     loadError,
     dialogOpen,
+    editing,
     fetchClients,
     loadMore,
     createClient,
+    updateClient,
+    deleteClient,
     openDialog,
     closeDialog,
   }

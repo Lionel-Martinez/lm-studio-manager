@@ -3,12 +3,21 @@
 namespace Tests\Feature;
 
 use App\Models\Client;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class ClientApiTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // La API exige sesión iniciada.
+        $this->actingAs(User::factory()->create());
+    }
 
     /** Datos mínimos de un cliente válido. */
     private function client(array $overrides = []): array
@@ -179,5 +188,38 @@ class ClientApiTest extends TestCase
             ->assertJsonPath('data.display_name', 'Ana Vital')
             ->assertJsonCount(1, 'data.projects')
             ->assertJsonPath('data.projects.0.status_label', 'En desarrollo');
+    }
+
+    public function test_edita_los_datos_de_un_cliente(): void
+    {
+        $client = Client::create($this->client());
+
+        $this->putJson("/api/clients/{$client->id}", $this->client(['last_name' => 'Pérez', 'phone' => '387 555']))
+            ->assertOk()
+            ->assertJsonPath('data.last_name', 'Pérez');
+
+        $this->assertDatabaseHas('clients', ['id' => $client->id, 'last_name' => 'Pérez', 'phone' => '387 555']);
+        $this->assertDatabaseHas('audit_logs', ['event' => 'client.updated', 'subject_id' => $client->id]);
+    }
+
+    public function test_la_edicion_valida_los_datos(): void
+    {
+        $client = Client::create($this->client());
+
+        $this->putJson("/api/clients/{$client->id}", ['first_name' => '', 'last_name' => 'X', 'email' => 'no-es-correo'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['first_name', 'email']);
+    }
+
+    public function test_eliminar_un_cliente_es_una_baja_logica(): void
+    {
+        $client = Client::create($this->client());
+
+        $this->deleteJson("/api/clients/{$client->id}")->assertNoContent();
+
+        $this->assertSoftDeleted('clients', ['id' => $client->id]);
+        $this->getJson("/api/clients/{$client->id}")->assertNotFound();
+        $this->getJson('/api/clients')->assertJsonCount(0, 'data');
+        $this->assertDatabaseHas('audit_logs', ['event' => 'client.deleted', 'subject_id' => $client->id]);
     }
 }

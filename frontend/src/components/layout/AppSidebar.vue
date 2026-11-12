@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 
 import { useTheme } from '@/composables/useTheme'
+import { useAuthStore } from '@/stores/auth'
 
 const navigation = [
   { name: 'Resumen', path: '/' },
@@ -10,6 +11,7 @@ const navigation = [
   { name: 'Pagos', path: '/pagos' },
   { name: 'Reportes', path: '/reportes' },
   { name: 'Geografía', path: '/geografia' },
+  { name: 'Cuenta', path: '/cuenta' },
 ]
 
 const linkBase =
@@ -18,6 +20,17 @@ const linkActive = 'border-app-accent font-semibold text-app-text'
 const linkIdle = 'border-transparent text-app-muted hover:text-app-text'
 
 const { isDark, setTheme } = useTheme()
+const auth = useAuthStore()
+const router = useRouter()
+
+async function logout() {
+  try {
+    await auth.logout()
+  } catch {
+    // Si el servidor no responde, igual se cierra la sesión en este navegador.
+  }
+  await router.replace({ name: 'login' })
+}
 </script>
 
 <template>
@@ -48,7 +61,13 @@ const { isDark, setTheme } = useTheme()
       </RouterLink>
     </nav>
 
-    <div class="flex items-center gap-2 text-xs text-app-muted lg:mt-auto">
+    <div class="space-y-3 text-xs text-app-muted lg:mt-auto">
+    <p v-if="auth.user" class="truncate" :title="auth.user.email">{{ auth.user.email }}</p>
+    <button type="button" class="cursor-pointer underline underline-offset-4 transition-colors hover:text-app-text" @click="logout">
+      Cerrar sesión
+    </button>
+
+    <div class="flex items-center gap-2">
       <span>Tema</span>
       <button
         type="button"
@@ -69,6 +88,7 @@ const { isDark, setTheme } = useTheme()
       >
         Oscuro
       </button>
+    </div>
     </div>
   </aside>
 </template>

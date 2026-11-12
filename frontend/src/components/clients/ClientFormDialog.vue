@@ -10,7 +10,7 @@ import Textarea from 'primevue/textarea'
 import FormField from '@/components/ui/FormField.vue'
 import { getValidationErrors, type FieldErrors } from '@/lib/api'
 import { useClientsStore } from '@/stores/clients'
-import { serviceTypeLabels, type NewClientPayload, type ServiceType } from '@/types/client'
+import { serviceTypeLabels, type ClientDataPayload, type NewClientPayload, type ServiceType } from '@/types/client'
 import { projectStatusLabels, type ProjectStatus } from '@/types/dashboard'
 import { toISODate } from '@/utils/dates'
 
@@ -64,11 +64,25 @@ watch(
   (open) => {
     if (open) {
       Object.assign(form, emptyForm())
+      const client = store.editing
+      if (client) {
+        Object.assign(form, {
+          first_name: client.first_name,
+          last_name: client.last_name,
+          company_name: client.company_name ?? '',
+          phone: client.phone ?? '',
+          whatsapp: client.whatsapp ?? '',
+          email: client.email ?? '',
+          notes: client.notes ?? '',
+        })
+      }
       errors.value = {}
       generalError.value = ''
     }
   },
 )
+
+const isEditing = computed(() => store.editing !== null)
 
 const firstError = (field: string) => errors.value[field]?.[0]
 
@@ -90,7 +104,7 @@ function buildPayload(): NewClientPayload {
     notes: clean(form.notes),
   }
 
-  if (form.withProject && form.project.service_type) {
+  if (!isEditing.value && form.withProject && form.project.service_type) {
     payload.project = {
       service_type: form.project.service_type,
       name: clean(form.project.name),
@@ -105,6 +119,18 @@ function buildPayload(): NewClientPayload {
   return payload
 }
 
+/** Al editar, un campo vaciado debe borrarse (null), no quedar como estaba. */
+function withClearedFields(data: ClientDataPayload): ClientDataPayload {
+  return {
+    ...data,
+    company_name: data.company_name ?? null,
+    phone: data.phone ?? null,
+    whatsapp: data.whatsapp ?? null,
+    email: data.email ?? null,
+    notes: data.notes ?? null,
+  }
+}
+
 async function submit() {
   errors.value = {}
   generalError.value = ''
@@ -113,7 +139,7 @@ async function submit() {
   const missing: FieldErrors = {}
   if (!form.first_name.trim()) missing.first_name = ['El nombre es obligatorio.']
   if (!form.last_name.trim()) missing.last_name = ['El apellido es obligatorio.']
-  if (form.withProject && !form.project.service_type) {
+  if (!isEditing.value && form.withProject && !form.project.service_type) {
     missing['project.service_type'] = ['Elegí el tipo de servicio.']
   }
   if (Object.keys(missing).length > 0) {
@@ -124,7 +150,12 @@ async function submit() {
   saving.value = true
 
   try {
-    await store.createClient(buildPayload())
+    if (store.editing) {
+      const { project: _project, ...data } = buildPayload()
+      await store.updateClient(store.editing.id, withClearedFields(data))
+    } else {
+      await store.createClient(buildPayload())
+    }
     store.closeDialog()
   } catch (error) {
     const validation = getValidationErrors(error)
@@ -144,7 +175,7 @@ async function submit() {
   <Dialog
     v-model:visible="visible"
     modal
-    header="Nuevo cliente"
+    :header="isEditing ? 'Editar cliente' : 'Nuevo cliente'"
     :draggable="false"
     :style="{ width: '42rem', maxWidth: '95vw' }"
   >
@@ -191,7 +222,7 @@ async function submit() {
         </div>
       </fieldset>
 
-      <fieldset class="space-y-4 border-t border-app-border pt-5">
+      <fieldset v-if="!isEditing" class="space-y-4 border-t border-app-border pt-5">
         <legend class="sr-only">Primer proyecto</legend>
 
         <label class="flex cursor-pointer items-center gap-2 text-sm font-semibold">
@@ -260,7 +291,7 @@ async function submit() {
 
     <template #footer>
       <Button label="Cancelar" severity="secondary" text :disabled="saving" @click="store.closeDialog()" />
-      <Button type="submit" form="client-form" label="Guardar cliente" :loading="saving" />
+      <Button type="submit" form="client-form" :label="isEditing ? 'Guardar cambios' : 'Guardar cliente'" :loading="saving" />
     </template>
   </Dialog>
 </template>

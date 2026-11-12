@@ -59,15 +59,19 @@ export interface NewProjectPayload {
   delay_reason?: string
 }
 
-export interface NewClientPayload {
+/** Datos propios del cliente (sirven para crear y para editar). */
+export interface ClientDataPayload {
   first_name: string
   last_name: string
-  company_name?: string
-  email?: string
-  phone?: string
-  whatsapp?: string
+  company_name?: string | null
+  email?: string | null
+  phone?: string | null
+  whatsapp?: string | null
   client_type?: ClientType
-  notes?: string
+  notes?: string | null
+}
+
+export interface NewClientPayload extends ClientDataPayload {
   project?: NewProjectPayload
 }
 

@@ -10,11 +10,15 @@ import primeLocale from 'primelocale/es.json'
 
 import App from './App.vue'
 import router from './router'
+import { onSessionExpired } from '@/lib/api'
+import { useAuthStore } from '@/stores/auth'
 import { CuadernoPreset } from './theme/preset'
 
 const app = createApp(App)
 
-app.use(createPinia())
+const pinia = createPinia()
+
+app.use(pinia)
 app.use(router)
 app.use(PrimeVue, {
   locale: primeLocale.es,
@@ -29,6 +33,14 @@ app.use(PrimeVue, {
       },
     },
   },
+})
+
+// Si la sesión vence mientras se usa la app, se vuelve al login.
+onSessionExpired(() => {
+  useAuthStore(pinia).clear()
+  if (router.currentRoute.value.name !== 'login') {
+    router.replace({ name: 'login', query: { redirect: router.currentRoute.value.fullPath } })
+  }
 })
 
 app.mount('#app')

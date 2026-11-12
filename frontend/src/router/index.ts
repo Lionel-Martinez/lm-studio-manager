@@ -1,12 +1,20 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import AppLayout from '@/components/layout/AppLayout.vue'
+import { useAuthStore } from '@/stores/auth'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
+      path: '/login',
+      name: 'login',
+      component: () => import('@/views/LoginView.vue'),
+      meta: { guest: true, title: 'Acceso' },
+    },
+    {
       path: '/',
       component: AppLayout,
+      meta: { requiresAuth: true },
       children: [
         {
           path: '',
@@ -54,6 +62,15 @@ const router = createRouter({
           },
         },
         {
+          path: 'cuenta',
+          name: 'cuenta',
+          component: () => import('@/views/AccountView.vue'),
+          meta: {
+            title: 'Cuenta',
+            description: 'Contraseña y actividad de tu sesión.',
+          },
+        },
+        {
           path: 'geografia',
           name: 'geografia',
           component: () => import('@/views/GeographyView.vue'),
@@ -65,6 +82,26 @@ const router = createRouter({
       ],
     },
   ],
+})
+
+// Todo lo que no sea el login exige sesión iniciada.
+router.beforeEach(async (to) => {
+  const auth = useAuthStore()
+
+  if (!auth.checked) {
+    try {
+      await auth.fetchUser()
+    } catch {
+      // Sin conexión con el backend: se trata como sin sesión.
+      auth.clear()
+    }
+  }
+
+  if (to.meta.requiresAuth && !auth.isLoggedIn) {
+    return { name: 'login', query: to.fullPath !== '/' ? { redirect: to.fullPath } : undefined }
+  }
+
+  if (to.meta.guest && auth.isLoggedIn) return { path: '/' }
 })
 
 export default router
