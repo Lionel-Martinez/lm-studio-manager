@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\ClientType;
 use App\Enums\ProjectStatus;
 use App\Enums\ServiceType;
 use Illuminate\Foundation\Http\FormRequest;
@@ -27,11 +28,20 @@ class StoreClientRequest extends FormRequest
         }
 
         return [
-            'name' => ['required', 'string', 'max:150'],
-            'contact_name' => ['nullable', 'string', 'max:150'],
-            'email' => ['nullable', 'email', 'max:150'],
-            'phone' => ['nullable', 'string', 'max:40'],
-            'city' => ['nullable', 'string', 'max:120'],
+            'first_name' => ['required', 'string', 'max:255'],
+            'last_name' => ['required', 'string', 'max:255'],
+            'company_name' => ['nullable', 'string', 'max:255'],
+            'tax_id' => ['nullable', 'string', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:30'],
+            'whatsapp' => ['nullable', 'string', 'max:30'],
+            'website' => ['nullable', 'string', 'max:255'],
+            'country_id' => ['nullable', 'integer', 'exists:countries,id'],
+            'region_id' => ['nullable', 'integer', 'exists:regions,id'],
+            'locality_id' => ['nullable', 'integer', 'exists:localities,id'],
+            'first_contact_at' => ['nullable', 'date'],
+            'source' => ['nullable', 'string', 'max:255'],
+            'client_type' => ['nullable', Rule::enum(ClientType::class)],
             'notes' => ['nullable', 'string', 'max:2000'],
 
             'project' => ['nullable', 'array'],
@@ -48,11 +58,20 @@ class StoreClientRequest extends FormRequest
     public function attributes(): array
     {
         return [
-            'name' => 'nombre',
-            'contact_name' => 'persona de contacto',
+            'first_name' => 'nombre',
+            'last_name' => 'apellido',
+            'company_name' => 'empresa o negocio',
+            'tax_id' => 'CUIT o DNI',
             'email' => 'correo',
             'phone' => 'teléfono',
-            'city' => 'localidad',
+            'whatsapp' => 'WhatsApp',
+            'website' => 'sitio web',
+            'country_id' => 'país',
+            'region_id' => 'provincia o departamento',
+            'locality_id' => 'localidad',
+            'first_contact_at' => 'fecha de primer contacto',
+            'source' => 'origen',
+            'client_type' => 'tipo de cliente',
             'notes' => 'notas',
             'project.service_type' => 'tipo de servicio',
             'project.name' => 'nombre del proyecto',
@@ -73,6 +92,7 @@ class StoreClientRequest extends FormRequest
             'max' => 'El campo :attribute no puede superar los :max caracteres.',
             'email' => 'Ingresá un correo válido.',
             'date' => 'El campo :attribute no es una fecha válida.',
+            'exists' => 'El valor elegido para :attribute no existe.',
             'enum' => 'El valor elegido para :attribute no es válido.',
             'after_or_equal' => 'La entrega estimada no puede ser anterior al inicio estimado.',
         ];

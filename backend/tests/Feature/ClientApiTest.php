@@ -10,25 +10,44 @@ class ClientApiTest extends TestCase
 {
     use RefreshDatabase;
 
+    /** Datos mínimos de un cliente válido. */
+    private function client(array $overrides = []): array
+    {
+        return array_merge([
+            'first_name' => 'Pedro',
+            'last_name' => 'Gómez',
+        ], $overrides);
+    }
+
     public function test_crea_un_cliente_sin_proyecto(): void
     {
-        $response = $this->postJson('/api/clients', [
-            'name' => 'Cafetería Don Pepe',
+        $response = $this->postJson('/api/clients', $this->client([
+            'company_name' => 'Cafetería Don Pepe',
             'phone' => '3878 123456',
-        ]);
+        ]));
 
         $response->assertCreated()
-            ->assertJsonPath('data.name', 'Cafetería Don Pepe')
+            ->assertJsonPath('data.display_name', 'Cafetería Don Pepe')
+            ->assertJsonPath('data.first_name', 'Pedro')
             ->assertJsonPath('data.projects', []);
 
-        $this->assertDatabaseHas('clients', ['name' => 'Cafetería Don Pepe']);
+        $this->assertDatabaseHas('clients', ['first_name' => 'Pedro', 'company_name' => 'Cafetería Don Pepe']);
         $this->assertDatabaseCount('projects', 0);
+    }
+
+    public function test_aplica_los_valores_por_defecto_del_cliente(): void
+    {
+        $this->postJson('/api/clients', $this->client())
+            ->assertCreated()
+            ->assertJsonPath('data.display_name', 'Pedro Gómez')
+            ->assertJsonPath('data.client_type', 'person')
+            ->assertJsonPath('data.commercial_status', 'new')
+            ->assertJsonPath('data.first_contact_at', now()->toDateString());
     }
 
     public function test_crea_un_cliente_con_su_primer_proyecto_y_fechas(): void
     {
-        $response = $this->postJson('/api/clients', [
-            'name' => 'Ferretería Norte',
+        $response = $this->postJson('/api/clients', $this->client([
             'project' => [
                 'service_type' => 'web_app',
                 'status' => 'waiting',
@@ -37,7 +56,7 @@ class ClientApiTest extends TestCase
                 'due_date' => '2026-12-19',
                 'delay_reason' => 'Falta el catálogo del cliente',
             ],
-        ]);
+        ]));
 
         $response->assertCreated()
             ->assertJsonPath('data.projects.0.service_type', 'web_app')
@@ -53,29 +72,26 @@ class ClientApiTest extends TestCase
 
     public function test_el_proyecto_nuevo_queda_como_prospecto_y_con_fecha_de_hoy_por_defecto(): void
     {
-        $response = $this->postJson('/api/clients', [
-            'name' => 'Panadería La Espiga',
+        $this->postJson('/api/clients', $this->client([
             'project' => ['service_type' => 'digital_menu'],
-        ]);
-
-        $response->assertCreated()
+        ]))
+            ->assertCreated()
             ->assertJsonPath('data.projects.0.status', 'prospect')
             ->assertJsonPath('data.projects.0.entry_date', now()->toDateString());
     }
 
-    public function test_el_nombre_es_obligatorio(): void
+    public function test_nombre_y_apellido_son_obligatorios(): void
     {
         $this->postJson('/api/clients', ['email' => 'a@b.com'])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['name']);
+            ->assertJsonValidationErrors(['first_name', 'last_name']);
     }
 
     public function test_si_se_envia_proyecto_el_servicio_es_obligatorio(): void
     {
-        $this->postJson('/api/clients', [
-            'name' => 'Cliente',
+        $this->postJson('/api/clients', $this->client([
             'project' => ['status' => 'waiting'],
-        ])
+        ]))
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['project.service_type']);
 
@@ -84,64 +100,74 @@ class ClientApiTest extends TestCase
 
     public function test_la_entrega_no_puede_ser_anterior_al_inicio(): void
     {
-        $this->postJson('/api/clients', [
-            'name' => 'Cliente',
+        $this->postJson('/api/clients', $this->client([
             'project' => [
                 'service_type' => 'static_site',
                 'estimated_start_date' => '2026-12-10',
                 'due_date' => '2026-12-01',
             ],
-        ])
+        ]))
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['project.due_date']);
     }
 
     public function test_se_puede_informar_la_entrega_sin_inicio(): void
     {
-        $this->postJson('/api/clients', [
-            'name' => 'Cliente',
+        $this->postJson('/api/clients', $this->client([
             'project' => [
                 'service_type' => 'static_site',
                 'due_date' => '2026-12-01',
             ],
-        ])->assertCreated();
+        ]))->assertCreated();
     }
 
     public function test_rechaza_un_servicio_o_estado_inexistente(): void
     {
-        $this->postJson('/api/clients', [
-            'name' => 'Cliente',
+        $this->postJson('/api/clients', $this->client([
             'project' => ['service_type' => 'hosting', 'status' => 'archivado'],
-        ])
+        ]))
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['project.service_type', 'project.status']);
     }
 
-    public function test_rechaza_un_correo_invalido(): void
+    public function test_rechaza_un_correo_invalido_y_un_tipo_de_cliente_inexistente(): void
     {
-        $this->postJson('/api/clients', ['name' => 'Cliente', 'email' => 'no-es-un-correo'])
+        $this->postJson('/api/clients', $this->client([
+            'email' => 'no-es-un-correo',
+            'client_type' => 'alien',
+        ]))
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['email']);
+            ->assertJsonValidationErrors(['email', 'client_type']);
+    }
+
+    public function test_rechaza_ubicaciones_que_no_existen(): void
+    {
+        $this->postJson('/api/clients', $this->client([
+            'country_id' => 9999,
+            'region_id' => 9999,
+        ]))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['country_id', 'region_id']);
     }
 
     public function test_lista_y_busca_clientes(): void
     {
-        Client::create(['name' => 'Gimnasio Vital', 'city' => 'Orán']);
-        Client::create(['name' => 'Estudio Rojas', 'city' => 'Salta']);
+        Client::create(['first_name' => 'Ana', 'last_name' => 'Vital', 'company_name' => 'Gimnasio Vital']);
+        Client::create(['first_name' => 'Luis', 'last_name' => 'Rojas', 'company_name' => 'Estudio Rojas']);
 
         $this->getJson('/api/clients')
             ->assertOk()
             ->assertJsonCount(2, 'data');
 
-        $this->getJson('/api/clients?search=vital')
+        $this->getJson('/api/clients?search=gimnasio')
             ->assertOk()
             ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.name', 'Gimnasio Vital');
+            ->assertJsonPath('data.0.display_name', 'Gimnasio Vital');
     }
 
     public function test_muestra_un_cliente_con_sus_proyectos(): void
     {
-        $client = Client::create(['name' => 'Gimnasio Vital']);
+        $client = Client::create(['first_name' => 'Ana', 'last_name' => 'Vital']);
         $client->projects()->create([
             'service_type' => 'mobile_app',
             'status' => 'in_progress',
@@ -150,7 +176,7 @@ class ClientApiTest extends TestCase
 
         $this->getJson("/api/clients/{$client->id}")
             ->assertOk()
-            ->assertJsonPath('data.name', 'Gimnasio Vital')
+            ->assertJsonPath('data.display_name', 'Ana Vital')
             ->assertJsonCount(1, 'data.projects')
             ->assertJsonPath('data.projects.0.status_label', 'En desarrollo');
     }

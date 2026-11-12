@@ -23,14 +23,28 @@ export interface ClientProject {
   delay_reason: string | null
 }
 
+export type ClientType = 'person' | 'company'
+
 export interface Client {
   id: number
-  name: string
-  contact_name: string | null
+  /** Nombre del negocio si tiene; si no, nombre y apellido de la persona. */
+  display_name: string
+  first_name: string
+  last_name: string
+  company_name: string | null
+  tax_id: string | null
   email: string | null
   phone: string | null
-  city: string | null
+  whatsapp: string | null
+  website: string | null
+  client_type: ClientType
+  commercial_status: string
+  first_contact_at: string | null
+  source: string | null
   notes: string | null
+  country_id: number | null
+  region_id: number | null
+  locality_id: number | null
   created_at: string
   projects: ClientProject[]
 }
@@ -46,11 +60,13 @@ export interface NewProjectPayload {
 }
 
 export interface NewClientPayload {
-  name: string
-  contact_name?: string
+  first_name: string
+  last_name: string
+  company_name?: string
   email?: string
   phone?: string
-  city?: string
+  whatsapp?: string
+  client_type?: ClientType
   notes?: string
   project?: NewProjectPayload
 }

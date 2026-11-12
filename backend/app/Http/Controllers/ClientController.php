@@ -22,10 +22,11 @@ class ClientController extends Controller
             ->with(['projects' => fn ($query) => $query->orderBy('entry_date', 'desc')])
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($query) use ($search) {
-                    $query->where('name', 'like', "%{$search}%")
-                        ->orWhere('contact_name', 'like', "%{$search}%")
+                    $query->where('first_name', 'like', "%{$search}%")
+                        ->orWhere('last_name', 'like', "%{$search}%")
+                        ->orWhere('company_name', 'like', "%{$search}%")
                         ->orWhere('email', 'like', "%{$search}%")
-                        ->orWhere('city', 'like', "%{$search}%");
+                        ->orWhere('phone', 'like', "%{$search}%");
                 });
             })
             ->latest()
@@ -39,7 +40,11 @@ class ClientController extends Controller
         $data = $request->validated();
 
         $client = DB::transaction(function () use ($data) {
-            $client = Client::create(Arr::except($data, ['project']));
+            $clientData = Arr::except($data, ['project']);
+            $clientData['first_contact_at'] ??= now()->toDateString();
+
+            // refresh() trae los valores por defecto de la base (tipo de cliente, estado comercial).
+            $client = Client::create($clientData)->refresh();
 
             if (! empty($data['project'])) {
                 $project = $data['project'];

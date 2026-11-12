@@ -28,11 +28,12 @@ const statusOptions = (Object.keys(projectStatusLabels) as ProjectStatus[]).map(
 
 function emptyForm() {
   return {
-    name: '',
-    contact_name: '',
+    first_name: '',
+    last_name: '',
+    company_name: '',
     phone: '',
+    whatsapp: '',
     email: '',
-    city: '',
     notes: '',
     withProject: true,
     project: {
@@ -75,12 +76,17 @@ const clean = (value: string) => value.trim() || undefined
 const iso = (value: Date | null) => (value ? toISODate(value) : undefined)
 
 function buildPayload(): NewClientPayload {
+  const company = clean(form.company_name)
+
   const payload: NewClientPayload = {
-    name: form.name.trim(),
-    contact_name: clean(form.contact_name),
+    first_name: form.first_name.trim(),
+    last_name: form.last_name.trim(),
+    company_name: company,
+    // Si tiene negocio se guarda como empresa; si no, como persona.
+    client_type: company ? 'company' : 'person',
     phone: clean(form.phone),
+    whatsapp: clean(form.whatsapp),
     email: clean(form.email),
-    city: clean(form.city),
     notes: clean(form.notes),
   }
 
@@ -104,12 +110,14 @@ async function submit() {
   generalError.value = ''
 
   // Validación mínima en el navegador; la definitiva la hace el backend.
-  if (!form.name.trim()) {
-    errors.value = { name: ['El nombre es obligatorio.'] }
-    return
-  }
+  const missing: FieldErrors = {}
+  if (!form.first_name.trim()) missing.first_name = ['El nombre es obligatorio.']
+  if (!form.last_name.trim()) missing.last_name = ['El apellido es obligatorio.']
   if (form.withProject && !form.project.service_type) {
-    errors.value = { 'project.service_type': ['Elegí el tipo de servicio.'] }
+    missing['project.service_type'] = ['Elegí el tipo de servicio.']
+  }
+  if (Object.keys(missing).length > 0) {
+    errors.value = missing
     return
   }
 
@@ -148,27 +156,33 @@ async function submit() {
       <fieldset class="grid gap-4 sm:grid-cols-2">
         <legend class="sr-only">Datos del cliente</legend>
 
+        <FormField label="Nombre" for="client-first-name" :error="firstError('first_name')" required>
+          <InputText id="client-first-name" v-model="form.first_name" autofocus fluid :invalid="!!firstError('first_name')" />
+        </FormField>
+
+        <FormField label="Apellido" for="client-last-name" :error="firstError('last_name')" required>
+          <InputText id="client-last-name" v-model="form.last_name" fluid :invalid="!!firstError('last_name')" />
+        </FormField>
+
         <div class="sm:col-span-2">
-          <FormField label="Nombre o negocio" for="client-name" :error="firstError('name')" required>
-            <InputText id="client-name" v-model="form.name" autofocus fluid :invalid="!!firstError('name')" />
+          <FormField label="Empresa o negocio" for="client-company" hint="Opcional. Si lo completás, el cliente se muestra con este nombre." :error="firstError('company_name')">
+            <InputText id="client-company" v-model="form.company_name" fluid />
           </FormField>
         </div>
-
-        <FormField label="Persona de contacto" for="client-contact" :error="firstError('contact_name')">
-          <InputText id="client-contact" v-model="form.contact_name" fluid />
-        </FormField>
 
         <FormField label="Teléfono" for="client-phone" :error="firstError('phone')">
           <InputText id="client-phone" v-model="form.phone" type="tel" fluid />
         </FormField>
 
-        <FormField label="Correo" for="client-email" :error="firstError('email')">
-          <InputText id="client-email" v-model="form.email" type="email" fluid :invalid="!!firstError('email')" />
+        <FormField label="WhatsApp" for="client-whatsapp" :error="firstError('whatsapp')">
+          <InputText id="client-whatsapp" v-model="form.whatsapp" type="tel" fluid />
         </FormField>
 
-        <FormField label="Localidad" for="client-city" :error="firstError('city')">
-          <InputText id="client-city" v-model="form.city" fluid />
-        </FormField>
+        <div class="sm:col-span-2">
+          <FormField label="Correo" for="client-email" :error="firstError('email')">
+            <InputText id="client-email" v-model="form.email" type="email" fluid :invalid="!!firstError('email')" />
+          </FormField>
+        </div>
 
         <div class="sm:col-span-2">
           <FormField label="Notas" for="client-notes" :error="firstError('notes')">

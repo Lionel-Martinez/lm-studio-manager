@@ -28,6 +28,12 @@ function mainProject(client: Client): ClientProject | undefined {
   return client.projects.find((p) => p.status !== 'delivered') ?? client.projects[0]
 }
 
+/** Segunda línea de la fila: la persona de contacto (si el cliente es un negocio) y cómo ubicarla. */
+function contactLine(client: Client): string {
+  const person = client.company_name ? `${client.first_name} ${client.last_name}` : null
+  return [person, client.whatsapp ?? client.phone, client.email].filter(Boolean).join(' · ') || 'Sin datos de contacto'
+}
+
 const formatDate = (value: string | null) => (value ? formatShortDate(value) : '—')
 </script>
 
@@ -36,7 +42,7 @@ const formatDate = (value: string | null) => (value ? formatShortDate(value) : '
     <div class="flex flex-wrap items-center justify-between gap-3">
       <label class="w-full sm:w-80">
         <span class="sr-only">Buscar clientes</span>
-        <InputText v-model="store.search" placeholder="Buscar por nombre, contacto o localidad" fluid />
+        <InputText v-model="store.search" placeholder="Buscar por nombre, empresa, correo o teléfono" fluid />
       </label>
 
       <p v-if="store.meta" class="text-xs text-app-muted">
@@ -51,7 +57,7 @@ const formatDate = (value: string | null) => (value ? formatShortDate(value) : '
     <EmptyState
       v-else-if="!store.loading && store.items.length === 0"
       :title="store.search ? 'No hay clientes que coincidan' : 'Todavía no registraste clientes'"
-      :description="store.search ? 'Probá con otro nombre o localidad.' : 'Cargá el primero con su servicio y las fechas de ingreso, inicio y entrega.'"
+      :description="store.search ? 'Probá con otro nombre, empresa o teléfono.' : 'Cargá el primero con su servicio y las fechas de ingreso, inicio y entrega.'"
     >
       <Button v-if="!store.search" label="Nuevo cliente" @click="store.openDialog()" />
     </EmptyState>
@@ -72,10 +78,8 @@ const formatDate = (value: string | null) => (value ? formatShortDate(value) : '
         <tbody>
           <tr v-for="client in store.items" :key="client.id" class="border-b border-app-border align-top">
             <td class="py-3 pr-4">
-              <p class="font-semibold">{{ client.name }}</p>
-              <p class="text-xs text-app-muted">
-                {{ [client.contact_name, client.city].filter(Boolean).join(' · ') || 'Sin datos de contacto' }}
-              </p>
+              <p class="font-semibold">{{ client.display_name }}</p>
+              <p class="text-xs text-app-muted">{{ contactLine(client) }}</p>
             </td>
 
             <template v-if="mainProject(client)">
