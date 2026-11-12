@@ -23,6 +23,14 @@ const terracota = {
 export const CuadernoPreset = definePreset(Aura, {
   semantic: {
     primary: terracota,
+    formField: {
+      borderRadius: '2px',
+    },
+    overlay: {
+      modal: {
+        borderRadius: '4px',
+      },
+    },
     colorScheme: {
       light: {
         primary: {

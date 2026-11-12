@@ -1,5 +1,5 @@
 /** Etapa de un proyecto en el flujo comercial. */
-export type ProjectStatus = 'prospect' | 'waiting' | 'in_progress' | 'ready'
+export type ProjectStatus = 'prospect' | 'waiting' | 'in_progress' | 'ready' | 'delivered'
 
 /** Proyecto tal como se muestra en el calendario de entregas y en la lista de espera. */
 export interface DeliveryItem {
@@ -42,4 +42,5 @@ export const projectStatusLabels: Record<ProjectStatus, string> = {
   waiting: 'En espera',
   in_progress: 'En desarrollo',
   ready: 'Por entregar',
+  delivered: 'Entregado',
 }

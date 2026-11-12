@@ -6,6 +6,7 @@ import './assets/main.css'
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import PrimeVue from 'primevue/config'
+import primeLocale from 'primelocale/es.json'
 
 import App from './App.vue'
 import router from './router'
@@ -16,6 +17,7 @@ const app = createApp(App)
 app.use(createPinia())
 app.use(router)
 app.use(PrimeVue, {
+  locale: primeLocale.es,
   theme: {
     preset: CuadernoPreset,
     options: {
