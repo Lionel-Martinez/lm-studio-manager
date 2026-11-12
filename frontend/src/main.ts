@@ -16,8 +16,6 @@ const app = createApp(App)
 app.use(createPinia())
 app.use(router)
 app.use(PrimeVue, {
-  // Clave de la licencia Community de PrimeVue 5 (ver .env.example). Sin clave se muestra un aviso.
-  license: import.meta.env.VITE_PRIMEUI_LICENSE,
   theme: {
     preset: CuadernoPreset,
     options: {
