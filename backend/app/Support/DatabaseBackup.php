@@ -56,7 +56,6 @@ class DatabaseBackup
             '--port='.$config['port'],
             '--user='.$config['username'],
             '--single-transaction',
-            '--routines',
             '--no-tablespaces',
             $config['database'],
         ], null, ['MYSQL_PWD' => (string) ($config['password'] ?? '')]); // La clave no viaja en la línea de comandos.
