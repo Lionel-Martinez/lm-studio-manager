@@ -37,8 +37,8 @@ class DashboardController extends Controller
                 'monthly_revenue' => (float) Payment::whereNotNull('paid_at')
                     ->whereBetween('paid_at', [today()->startOfMonth(), today()->endOfMonth()])
                     ->sum('amount'),
-                'active_clients' => $projects->whereIn('status', $working)->pluck('client_id')->unique()->count(),
-                'prospects' => $projects->whereIn('status', $waiting)->count(),
+                'active_clients' => $projects->filter(fn (Project $p) => in_array($p->status->value, $working, true))->pluck('client_id')->unique()->count(),
+                'prospects' => $projects->filter(fn (Project $p) => in_array($p->status->value, $waiting, true))->count(),
                 'pending_payments' => Payment::withStatus('pending')->count(),
                 'overdue_count' => (clone $overdue)->count(),
                 'overdue_amount' => (float) (clone $overdue)->sum('amount'),
