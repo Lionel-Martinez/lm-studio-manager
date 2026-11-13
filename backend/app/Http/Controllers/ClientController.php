@@ -33,7 +33,7 @@ class ClientController extends Controller
                 });
             })
             ->latest()
-            ->paginate(15);
+            ->paginate(min(max((int) $request->query('per_page', 15), 1), 100));
 
         return ClientResource::collection($clients);
     }

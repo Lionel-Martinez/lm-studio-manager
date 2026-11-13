@@ -3,6 +3,7 @@
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProjectController;
 use Illuminate\Support\Facades\Route;
 
@@ -22,6 +23,8 @@ Route::middleware('web')->group(function () {
         Route::get('account/activity', [AccountController::class, 'activity']);
 
         Route::apiResource('clients', ClientController::class);
+        Route::get('payments/summary', [PaymentController::class, 'summary']);
+        Route::apiResource('payments', PaymentController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::apiResource('clients.projects', ProjectController::class)->shallow()->only(['store', 'update', 'destroy']);
     });
 });
