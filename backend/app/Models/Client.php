@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Enums\ClientType;
+use App\Enums\CommercialStatus;
+use App\Enums\ProjectStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -36,6 +38,7 @@ class Client extends Model
         return [
             'first_contact_at' => 'date',
             'client_type' => ClientType::class,
+            'commercial_status' => CommercialStatus::class,
         ];
     }
 
@@ -63,5 +66,18 @@ class Client extends Model
     public function projects(): HasMany
     {
         return $this->hasMany(Project::class);
+    }
+
+    /**
+     * Un cliente "nuevo" pasa a "activo" cuando uno de sus proyectos ya está en marcha.
+     * No toca a los clientes marcados como inactivos a mano.
+     */
+    public function markActiveIfWorking(): void
+    {
+        $working = [ProjectStatus::InProgress, ProjectStatus::Ready];
+
+        if ($this->commercial_status === CommercialStatus::New && $this->projects()->whereIn('status', $working)->exists()) {
+            $this->update(['commercial_status' => CommercialStatus::Active]);
+        }
     }
 }

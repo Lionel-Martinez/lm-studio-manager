@@ -72,6 +72,9 @@ class AccountController extends Controller
         'client.created' => 'Cliente creado',
         'client.updated' => 'Cliente modificado',
         'client.deleted' => 'Cliente eliminado',
+        'project.created' => 'Proyecto creado',
+        'project.updated' => 'Proyecto modificado',
+        'project.deleted' => 'Proyecto eliminado',
         'user.created' => 'Usuario creado',
     ];
 }

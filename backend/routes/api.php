@@ -3,6 +3,7 @@
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\ProjectController;
 use Illuminate\Support\Facades\Route;
 
 // Todas las rutas de la API usan sesión + protección CSRF (grupo "web"):
@@ -21,5 +22,6 @@ Route::middleware('web')->group(function () {
         Route::get('account/activity', [AccountController::class, 'activity']);
 
         Route::apiResource('clients', ClientController::class);
+        Route::apiResource('clients.projects', ProjectController::class)->shallow()->only(['store', 'update', 'destroy']);
     });
 });

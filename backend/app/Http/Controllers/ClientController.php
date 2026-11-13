@@ -61,6 +61,8 @@ class ClientController extends Controller
                     'due_date' => $project['due_date'] ?? null,
                     'delay_reason' => $project['delay_reason'] ?? null,
                 ]);
+
+                $client->markActiveIfWorking();
             }
 
             return $client;

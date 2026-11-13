@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Enums\ClientType;
+use App\Enums\CommercialStatus;
 use App\Enums\ProjectStatus;
 use App\Enums\ServiceType;
 use Illuminate\Foundation\Http\FormRequest;
@@ -42,6 +43,7 @@ class StoreClientRequest extends FormRequest
             'first_contact_at' => ['nullable', 'date'],
             'source' => ['nullable', 'string', 'max:255'],
             'client_type' => ['nullable', Rule::enum(ClientType::class)],
+            'commercial_status' => ['nullable', Rule::enum(CommercialStatus::class)],
             'notes' => ['nullable', 'string', 'max:2000'],
 
             'project' => ['nullable', 'array'],
@@ -72,6 +74,7 @@ class StoreClientRequest extends FormRequest
             'first_contact_at' => 'fecha de primer contacto',
             'source' => 'origen',
             'client_type' => 'tipo de cliente',
+            'commercial_status' => 'estado del cliente',
             'notes' => 'notas',
             'project.service_type' => 'tipo de servicio',
             'project.name' => 'nombre del proyecto',

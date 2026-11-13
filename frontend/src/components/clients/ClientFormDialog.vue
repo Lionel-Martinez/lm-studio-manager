@@ -10,7 +10,7 @@ import Textarea from 'primevue/textarea'
 import FormField from '@/components/ui/FormField.vue'
 import { getValidationErrors, type FieldErrors } from '@/lib/api'
 import { useClientsStore } from '@/stores/clients'
-import { serviceTypeLabels, type ClientDataPayload, type NewClientPayload, type ServiceType } from '@/types/client'
+import { commercialStatusLabels, serviceTypeLabels, type ClientDataPayload, type CommercialStatus, type NewClientPayload, type ServiceType } from '@/types/client'
 import { projectStatusLabels, type ProjectStatus } from '@/types/dashboard'
 import { toISODate } from '@/utils/dates'
 
@@ -26,8 +26,14 @@ const statusOptions = (Object.keys(projectStatusLabels) as ProjectStatus[]).map(
   label: projectStatusLabels[value],
 }))
 
+const commercialOptions = (Object.keys(commercialStatusLabels) as CommercialStatus[]).map((value) => ({
+  value,
+  label: commercialStatusLabels[value],
+}))
+
 function emptyForm() {
   return {
+    commercial_status: 'new' as CommercialStatus,
     first_name: '',
     last_name: '',
     company_name: '',
@@ -74,6 +80,7 @@ watch(
           whatsapp: client.whatsapp ?? '',
           email: client.email ?? '',
           notes: client.notes ?? '',
+          commercial_status: client.commercial_status,
         })
       }
       errors.value = {}
@@ -102,6 +109,8 @@ function buildPayload(): NewClientPayload {
     whatsapp: clean(form.whatsapp),
     email: clean(form.email),
     notes: clean(form.notes),
+    // Al crear lo decide el sistema (nuevo → activo cuando arranca un proyecto).
+    commercial_status: isEditing.value ? form.commercial_status : undefined,
   }
 
   if (!isEditing.value && form.withProject && form.project.service_type) {
@@ -212,6 +221,12 @@ async function submit() {
         <div class="sm:col-span-2">
           <FormField label="Correo" for="client-email" :error="firstError('email')">
             <InputText id="client-email" v-model="form.email" type="email" fluid :invalid="!!firstError('email')" />
+          </FormField>
+        </div>
+
+        <div v-if="isEditing" class="sm:col-span-2">
+          <FormField label="Estado del cliente" for="client-status" :error="firstError('commercial_status')">
+            <Select v-model="form.commercial_status" input-id="client-status" :options="commercialOptions" option-label="label" option-value="value" fluid />
           </FormField>
         </div>
 

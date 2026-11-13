@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 import Button from 'primevue/button'
 
 import ClientFormDialog from '@/components/clients/ClientFormDialog.vue'
+import ProjectFormDialog from '@/components/clients/ProjectFormDialog.vue'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import { useClientsStore } from '@/stores/clients'
@@ -32,5 +33,6 @@ const pageDescription = computed(() => (route.meta.description as string) || '')
     </div>
 
     <ClientFormDialog />
+    <ProjectFormDialog />
   </div>
 </template>

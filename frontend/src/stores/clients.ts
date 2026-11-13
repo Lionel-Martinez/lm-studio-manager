@@ -2,7 +2,7 @@ import { ref } from 'vue'
 import { defineStore } from 'pinia'
 
 import { api } from '@/lib/api'
-import type { Client, ClientDataPayload, NewClientPayload, PaginationMeta } from '@/types/client'
+import type { Client, ClientDataPayload, ClientProject, NewClientPayload, NewProjectPayload, PaginationMeta } from '@/types/client'
 
 export const useClientsStore = defineStore('clients', () => {
   const items = ref<Client[]>([])
@@ -59,6 +59,32 @@ export const useClientsStore = defineStore('clients', () => {
     await fetchClients(1)
   }
 
+  /** Diálogo de proyecto: crea uno para `clientId`, o edita `project` si viene. */
+  const projectDialog = ref<{ clientId: number; clientName: string; project: ClientProject | null } | null>(null)
+
+  function openProjectDialog(client: Client, project: ClientProject | null = null) {
+    projectDialog.value = { clientId: client.id, clientName: client.display_name, project }
+  }
+
+  function closeProjectDialog() {
+    projectDialog.value = null
+  }
+
+  async function saveProject(payload: NewProjectPayload) {
+    const dialog = projectDialog.value
+    if (!dialog) return
+
+    if (dialog.project) await api.put(`/projects/${dialog.project.id}`, payload)
+    else await api.post(`/clients/${dialog.clientId}/projects`, payload)
+
+    await fetchClients(1)
+  }
+
+  async function deleteProject(id: number) {
+    await api.delete(`/projects/${id}`)
+    await fetchClients(1)
+  }
+
   function openDialog(client: Client | null = null) {
     editing.value = client
     dialogOpen.value = true
@@ -76,6 +102,11 @@ export const useClientsStore = defineStore('clients', () => {
     loadError,
     dialogOpen,
     editing,
+    projectDialog,
+    openProjectDialog,
+    closeProjectDialog,
+    saveProject,
+    deleteProject,
     fetchClients,
     loadMore,
     createClient,

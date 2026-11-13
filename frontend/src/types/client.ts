@@ -25,6 +25,14 @@ export interface ClientProject {
 
 export type ClientType = 'person' | 'company'
 
+export type CommercialStatus = 'new' | 'active' | 'inactive'
+
+export const commercialStatusLabels: Record<CommercialStatus, string> = {
+  new: 'Nuevo',
+  active: 'Activo',
+  inactive: 'Inactivo',
+}
+
 export interface Client {
   id: number
   /** Nombre del negocio si tiene; si no, nombre y apellido de la persona. */
@@ -38,7 +46,8 @@ export interface Client {
   whatsapp: string | null
   website: string | null
   client_type: ClientType
-  commercial_status: string
+  commercial_status: CommercialStatus
+  commercial_status_label: string
   first_contact_at: string | null
   source: string | null
   notes: string | null
@@ -68,6 +77,7 @@ export interface ClientDataPayload {
   phone?: string | null
   whatsapp?: string | null
   client_type?: ClientType
+  commercial_status?: CommercialStatus
   notes?: string | null
 }
 

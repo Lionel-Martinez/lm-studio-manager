@@ -35,6 +35,28 @@ function contactLine(client: Client): string {
   return [person, client.whatsapp ?? client.phone, client.email].filter(Boolean).join(' · ') || 'Sin datos de contacto'
 }
 
+const expanded = ref<Set<number>>(new Set())
+function toggleProjects(id: number) {
+  const next = new Set(expanded.value)
+  if (next.has(id)) next.delete(id)
+  else next.add(id)
+  expanded.value = next
+}
+
+const projectToDelete = ref<{ id: number; label: string } | null>(null)
+const deletingProject = ref(false)
+
+async function confirmDeleteProject() {
+  if (!projectToDelete.value) return
+  deletingProject.value = true
+  try {
+    await store.deleteProject(projectToDelete.value.id)
+    projectToDelete.value = null
+  } finally {
+    deletingProject.value = false
+  }
+}
+
 const toDelete = ref<Client | null>(null)
 const deleting = ref(false)
 const deleteError = ref('')
@@ -83,7 +105,7 @@ const formatDate = (value: string | null) => (value ? formatShortDate(value) : '
     </EmptyState>
 
     <div v-else class="overflow-x-auto">
-      <table class="w-full min-w-[840px] border-collapse text-sm">
+      <table class="w-full min-w-[900px] border-collapse text-sm">
         <thead>
           <tr class="border-b-2 border-app-rule text-left text-xs font-medium text-app-muted">
             <th scope="col" class="py-2 pr-4 font-medium">Cliente</th>
@@ -97,9 +119,13 @@ const formatDate = (value: string | null) => (value ? formatShortDate(value) : '
         </thead>
 
         <tbody>
-          <tr v-for="client in store.items" :key="client.id" class="border-b border-app-border align-top">
+          <template v-for="client in store.items" :key="client.id">
+          <tr class="border-b border-app-border align-top">
             <td class="py-3 pr-4">
-              <p class="font-semibold">{{ client.display_name }}</p>
+              <p class="font-semibold">
+                {{ client.display_name }}
+                <span class="ml-1 text-xs font-normal text-app-muted">{{ client.commercial_status_label }}</span>
+              </p>
               <p class="text-xs text-app-muted">{{ contactLine(client) }}</p>
             </td>
 
@@ -124,10 +150,37 @@ const formatDate = (value: string | null) => (value ? formatShortDate(value) : '
             <td v-else colspan="5" class="py-3 text-xs text-app-muted">Sin proyectos registrados</td>
 
             <td class="whitespace-nowrap py-3 text-right text-xs">
+              <button type="button" class="mr-3 cursor-pointer underline underline-offset-4 hover:text-app-accent" :aria-expanded="expanded.has(client.id)" @click="toggleProjects(client.id)">
+                Proyectos ({{ client.projects.length }})
+              </button>
               <button type="button" class="cursor-pointer underline underline-offset-4 hover:text-app-accent" :aria-label="`Editar ${client.display_name}`" @click="store.openDialog(client)">Editar</button>
               <button type="button" class="ml-3 cursor-pointer text-app-muted underline underline-offset-4 hover:text-app-danger" :aria-label="`Eliminar ${client.display_name}`" @click="toDelete = client; deleteError = ''">Eliminar</button>
             </td>
           </tr>
+
+          <tr v-if="expanded.has(client.id)" class="border-b border-app-border bg-app-sunken">
+            <td colspan="7" class="px-4 py-3">
+              <ul class="divide-y divide-app-border text-sm">
+                <li v-for="project in client.projects" :key="project.id" class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 py-2">
+                  <span>
+                    <span class="font-medium">{{ project.name || project.service_type_label }}</span>
+                    <span class="ml-2 text-xs text-app-muted">{{ project.service_type_label }} · {{ project.status_label }}</span>
+                    <span class="tabular ml-2 text-xs text-app-muted">
+                      {{ formatDate(project.entry_date) }} → {{ formatDate(project.estimated_start_date) }} → {{ formatDate(project.due_date) }}
+                    </span>
+                    <span v-if="project.delay_reason" class="ml-2 text-xs text-app-danger">Demora: {{ project.delay_reason }}</span>
+                  </span>
+                  <span class="whitespace-nowrap text-xs">
+                    <button type="button" class="cursor-pointer underline underline-offset-4 hover:text-app-accent" @click="store.openProjectDialog(client, project)">Editar</button>
+                    <button type="button" class="ml-3 cursor-pointer text-app-muted underline underline-offset-4 hover:text-app-danger" @click="projectToDelete = { id: project.id, label: project.name || project.service_type_label }">Eliminar</button>
+                  </span>
+                </li>
+                <li v-if="client.projects.length === 0" class="py-2 text-xs text-app-muted">Sin proyectos registrados.</li>
+              </ul>
+              <Button label="Agregar proyecto" size="small" severity="secondary" class="mt-2" @click="store.openProjectDialog(client)" />
+            </td>
+          </tr>
+          </template>
         </tbody>
       </table>
 
@@ -136,6 +189,14 @@ const formatDate = (value: string | null) => (value ? formatShortDate(value) : '
       </div>
     </div>
   </div>
+
+  <Dialog :visible="projectToDelete !== null" modal header="Eliminar proyecto" :draggable="false" :style="{ width: '28rem', maxWidth: '95vw' }" @update:visible="(v: boolean) => { if (!v) projectToDelete = null }">
+    <p class="text-sm">¿Eliminar el proyecto <strong>{{ projectToDelete?.label }}</strong>? Se oculta de las listas pero se conserva en la base de datos.</p>
+    <template #footer>
+      <Button label="Cancelar" severity="secondary" text :disabled="deletingProject" @click="projectToDelete = null" />
+      <Button label="Eliminar" severity="danger" :loading="deletingProject" @click="confirmDeleteProject" />
+    </template>
+  </Dialog>
 
   <Dialog :visible="toDelete !== null" modal header="Eliminar cliente" :draggable="false" :style="{ width: '28rem', maxWidth: '95vw' }" @update:visible="(v: boolean) => { if (!v) toDelete = null }">
     <p class="text-sm">
