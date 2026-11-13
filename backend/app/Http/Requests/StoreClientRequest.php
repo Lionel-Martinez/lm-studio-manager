@@ -38,7 +38,19 @@ class StoreClientRequest extends FormRequest
             'whatsapp' => ['nullable', 'string', 'max:30'],
             'website' => ['nullable', 'string', 'max:255'],
             'country_id' => ['nullable', 'integer', 'exists:countries,id'],
-            'region_id' => ['nullable', 'integer', 'exists:regions,id'],
+            'region_id' => [
+                'nullable',
+                'integer',
+                'exists:regions,id',
+                // La provincia o el departamento tiene que ser del país elegido.
+                function (string $attribute, mixed $value, \Closure $fail) {
+                    $countryId = $this->input('country_id');
+
+                    if ($value && $countryId && ! \App\Models\Region::whereKey($value)->where('country_id', $countryId)->exists()) {
+                        $fail('La provincia o el departamento no pertenece al país elegido.');
+                    }
+                },
+            ],
             'locality_id' => ['nullable', 'integer', 'exists:localities,id'],
             'first_contact_at' => ['nullable', 'date'],
             'source' => ['nullable', 'string', 'max:255'],

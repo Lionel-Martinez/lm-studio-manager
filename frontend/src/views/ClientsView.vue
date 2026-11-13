@@ -32,7 +32,7 @@ function mainProject(client: Client): ClientProject | undefined {
 /** Segunda línea de la fila: la persona de contacto (si el cliente es un negocio) y cómo ubicarla. */
 function contactLine(client: Client): string {
   const person = client.company_name ? `${client.first_name} ${client.last_name}` : null
-  return [person, client.whatsapp ?? client.phone, client.email].filter(Boolean).join(' · ') || 'Sin datos de contacto'
+  return [person, client.location_label, client.whatsapp ?? client.phone, client.email].filter(Boolean).join(' · ') || 'Sin datos de contacto'
 }
 
 const expanded = ref<Set<number>>(new Set())

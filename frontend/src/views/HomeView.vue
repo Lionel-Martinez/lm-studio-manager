@@ -92,7 +92,7 @@ const kpiItems = computed<KpiItem[]>(() => [
         <RevenueChart :points="revenue" />
       </SectionBlock>
 
-      <SectionBlock title="Distribución de clientes" description="Por localidad.">
+      <SectionBlock title="Distribución de clientes" description="Por departamento o provincia.">
         <ClientDistributionChart :points="distribution" />
       </SectionBlock>
     </div>

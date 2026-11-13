@@ -8,9 +8,9 @@ import Select from 'primevue/select'
 import Textarea from 'primevue/textarea'
 
 import FormField from '@/components/ui/FormField.vue'
-import { getValidationErrors, type FieldErrors } from '@/lib/api'
+import { api, getValidationErrors, type FieldErrors } from '@/lib/api'
 import { useClientsStore } from '@/stores/clients'
-import { commercialStatusLabels, serviceTypeLabels, type ClientDataPayload, type CommercialStatus, type NewClientPayload, type ServiceType } from '@/types/client'
+import { commercialStatusLabels, type Client, serviceTypeLabels, type ClientDataPayload, type CommercialStatus, type NewClientPayload, type ServiceType } from '@/types/client'
 import { projectStatusLabels, type ProjectStatus } from '@/types/dashboard'
 import { toISODate } from '@/utils/dates'
 
@@ -31,8 +31,64 @@ const commercialOptions = (Object.keys(commercialStatusLabels) as CommercialStat
   label: commercialStatusLabels[value],
 }))
 
+interface GeoOption {
+  id: number
+  name: string
+}
+
+const countries = ref<GeoOption[]>([])
+const provinces = ref<GeoOption[]>([])
+const departments = ref<GeoOption[]>([])
+
+async function loadRegions(countryId: number, parentId?: number): Promise<GeoOption[]> {
+  const { data } = await api.get('/geo/regions', { params: { country_id: countryId, parent_id: parentId } })
+  return data.data
+}
+
+async function onCountryChange(countryId: number | null) {
+  form.province_id = null
+  form.department_id = null
+  provinces.value = []
+  departments.value = []
+  if (countryId) provinces.value = await loadRegions(countryId)
+}
+
+async function onProvinceChange(provinceId: number | null) {
+  form.department_id = null
+  departments.value = []
+  if (provinceId && form.country_id) departments.value = await loadRegions(form.country_id, provinceId)
+}
+
+/** Carga las listas y, si se edita un cliente, deja elegido su lugar. */
+async function setupLocation(client: Client | null) {
+  try {
+    const { data } = await api.get('/geo/countries')
+    countries.value = data.data
+
+    // Con un solo país cargado se elige solo.
+    const countryId = client?.country_id ?? (countries.value.length === 1 ? (countries.value[0]?.id ?? null) : null)
+    form.country_id = countryId
+    if (!countryId) return
+
+    provinces.value = await loadRegions(countryId)
+
+    if (client?.region_id) {
+      form.province_id = client.province_id ?? client.region_id
+      if (client.province_id && client.province_id !== client.region_id) {
+        departments.value = await loadRegions(countryId, client.province_id)
+        form.department_id = client.region_id
+      }
+    }
+  } catch {
+    // Sin ubicación se puede guardar igual; la lista queda vacía.
+  }
+}
+
 function emptyForm() {
   return {
+    country_id: null as number | null,
+    province_id: null as number | null,
+    department_id: null as number | null,
     commercial_status: 'new' as CommercialStatus,
     first_name: '',
     last_name: '',
@@ -71,6 +127,7 @@ watch(
     if (open) {
       Object.assign(form, emptyForm())
       const client = store.editing
+      void setupLocation(client)
       if (client) {
         Object.assign(form, {
           first_name: client.first_name,
@@ -111,6 +168,8 @@ function buildPayload(): NewClientPayload {
     notes: clean(form.notes),
     // Al crear lo decide el sistema (nuevo → activo cuando arranca un proyecto).
     commercial_status: isEditing.value ? form.commercial_status : undefined,
+    country_id: form.country_id,
+    region_id: form.department_id ?? form.province_id,
   }
 
   if (!isEditing.value && form.withProject && form.project.service_type) {
@@ -137,6 +196,8 @@ function withClearedFields(data: ClientDataPayload): ClientDataPayload {
     whatsapp: data.whatsapp ?? null,
     email: data.email ?? null,
     notes: data.notes ?? null,
+    country_id: data.country_id ?? null,
+    region_id: data.region_id ?? null,
   }
 }
 
@@ -221,6 +282,20 @@ async function submit() {
         <div class="sm:col-span-2">
           <FormField label="Correo" for="client-email" :error="firstError('email')">
             <InputText id="client-email" v-model="form.email" type="email" fluid :invalid="!!firstError('email')" />
+          </FormField>
+        </div>
+
+        <FormField label="País" for="client-country" :error="firstError('country_id')">
+          <Select v-model="form.country_id" input-id="client-country" :options="countries" option-label="name" option-value="id" placeholder="Sin especificar" show-clear fluid @update:model-value="onCountryChange" />
+        </FormField>
+
+        <FormField label="Provincia" for="client-province" :error="firstError('region_id')">
+          <Select v-model="form.province_id" input-id="client-province" :options="provinces" option-label="name" option-value="id" placeholder="Sin especificar" show-clear filter :disabled="!form.country_id" fluid @update:model-value="onProvinceChange" />
+        </FormField>
+
+        <div class="sm:col-span-2">
+          <FormField label="Departamento" for="client-department" hint="Se muestra después de elegir la provincia.">
+            <Select v-model="form.department_id" input-id="client-department" :options="departments" option-label="name" option-value="id" placeholder="Sin especificar" show-clear filter :disabled="departments.length === 0" fluid />
           </FormField>
         </div>
 

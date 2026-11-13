@@ -22,7 +22,7 @@ class ClientController extends Controller
         $search = trim((string) $request->query('search', ''));
 
         $clients = Client::query()
-            ->with(['projects' => fn ($query) => $query->orderBy('entry_date', 'desc')])
+            ->with(['country', 'region.parent', 'projects' => fn ($query) => $query->orderBy('entry_date', 'desc')])
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($query) use ($search) {
                     $query->where('first_name', 'like', "%{$search}%")
@@ -70,14 +70,14 @@ class ClientController extends Controller
 
         AuditLog::record('client.created', $client, ['name' => $client->display_name]);
 
-        return ClientResource::make($client->load('projects'))
+        return ClientResource::make($client->load(['projects', 'country', 'region.parent']))
             ->response()
             ->setStatusCode(201);
     }
 
     public function show(Client $client): ClientResource
     {
-        return ClientResource::make($client->load('projects'));
+        return ClientResource::make($client->load(['projects', 'country', 'region.parent']));
     }
 
     public function update(UpdateClientRequest $request, Client $client): ClientResource
@@ -86,7 +86,7 @@ class ClientController extends Controller
 
         AuditLog::record('client.updated', $client, ['name' => $client->display_name]);
 
-        return ClientResource::make($client->refresh()->load('projects'));
+        return ClientResource::make($client->refresh()->load(['projects', 'country', 'region.parent']));
     }
 
     /** Baja lógica: el cliente deja de verse pero su historial se conserva y se puede recuperar. */

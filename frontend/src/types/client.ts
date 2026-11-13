@@ -54,6 +54,13 @@ export interface Client {
   country_id: number | null
   region_id: number | null
   locality_id: number | null
+  country_name?: string | null
+  region_name?: string | null
+  /** Provincia del cliente (si `region_id` es un departamento, es su provincia). */
+  province_id?: number | null
+  province_name?: string | null
+  /** Por ejemplo "Orán, Salta". */
+  location_label?: string | null
   created_at: string
   projects: ClientProject[]
 }
@@ -78,6 +85,9 @@ export interface ClientDataPayload {
   whatsapp?: string | null
   client_type?: ClientType
   commercial_status?: CommercialStatus
+  country_id?: number | null
+  /** Lugar más específico: el departamento si se eligió, si no la provincia. */
+  region_id?: number | null
   notes?: string | null
 }
 

@@ -30,6 +30,12 @@ class ClientResource extends JsonResource
             'country_id' => $this->country_id,
             'region_id' => $this->region_id,
             'locality_id' => $this->locality_id,
+            'country_name' => $this->whenLoaded('country', fn () => $this->country?->name),
+            // region_id guarda el lugar más específico: departamento si lo hay, si no la provincia.
+            'region_name' => $this->whenLoaded('region', fn () => $this->region?->name),
+            'province_id' => $this->whenLoaded('region', fn () => $this->region?->parent_id ?? $this->region?->id),
+            'province_name' => $this->whenLoaded('region', fn () => $this->region?->parent?->name ?? $this->region?->name),
+            'location_label' => $this->whenLoaded('region', fn () => $this->locationLabel()),
             'created_at' => $this->created_at?->toIso8601String(),
             'projects' => ProjectResource::collection($this->whenLoaded('projects')),
         ];

@@ -80,4 +80,14 @@ class Client extends Model
             $this->update(['commercial_status' => CommercialStatus::Active]);
         }
     }
+
+    /** "Orán, Salta" / "Salta" / null, según lo que esté cargado (requiere region.parent). */
+    public function locationLabel(): ?string
+    {
+        if (! $this->region) {
+            return $this->country?->name;
+        }
+
+        return collect([$this->region->name, $this->region->parent?->name])->filter()->implode(', ');
+    }
 }

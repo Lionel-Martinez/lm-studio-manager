@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\Client;
-use App\Models\Locality;
 use App\Models\Payment;
 use App\Models\Region;
 use App\Models\Country;
@@ -63,16 +62,16 @@ class DashboardApiTest extends TestCase
             ->assertJsonPath('data.distribution.0.label', 'Sin ubicación');
     }
 
-    public function test_agrupa_clientes_por_localidad(): void
+    public function test_agrupa_clientes_por_departamento(): void
     {
         $this->actingAs(User::factory()->create());
 
         $country = Country::create(['name' => 'Argentina', 'iso2' => 'AR']);
         $region = Region::create(['country_id' => $country->id, 'name' => 'Salta']);
-        $oran = Locality::create(['region_id' => $region->id, 'name' => 'Orán']);
+        $oran = Region::create(['country_id' => $country->id, 'parent_id' => $region->id, 'name' => 'Orán', 'region_type' => 'department']);
 
-        Client::create(['first_name' => 'A', 'last_name' => 'A', 'locality_id' => $oran->id]);
-        Client::create(['first_name' => 'B', 'last_name' => 'B', 'locality_id' => $oran->id]);
+        Client::create(['first_name' => 'A', 'last_name' => 'A', 'region_id' => $oran->id]);
+        Client::create(['first_name' => 'B', 'last_name' => 'B', 'region_id' => $oran->id]);
 
         $this->getJson('/api/dashboard')->assertJsonPath('data.distribution.0', ['label' => 'Orán', 'value' => 2]);
     }

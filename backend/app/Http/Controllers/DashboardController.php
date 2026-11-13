@@ -83,13 +83,13 @@ class DashboardController extends Controller
             ->all();
     }
 
-    /** Clientes por localidad: las más frecuentes, el resto agrupado y los que no tienen ubicación aparte. */
+    /** Clientes por departamento o provincia: los más frecuentes, el resto agrupado y los que no tienen ubicación aparte. */
     private function distribution(): array
     {
         $counts = Client::query()
-            ->with('locality:id,name')
-            ->get(['id', 'locality_id'])
-            ->groupBy(fn (Client $c) => $c->locality?->name ?? 'Sin ubicación')
+            ->with('region:id,name')
+            ->get(['id', 'region_id'])
+            ->groupBy(fn (Client $c) => $c->region?->name ?? 'Sin ubicación')
             ->map->count()
             ->sortDesc();
 
