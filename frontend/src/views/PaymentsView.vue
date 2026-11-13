@@ -4,12 +4,14 @@ import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
 
 import PaymentFormDialog from '@/components/payments/PaymentFormDialog.vue'
+import { useCsvDownload } from '@/composables/useCsvDownload'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import { usePaymentsStore } from '@/stores/payments'
 import { paymentStatusLabels, type Payment, type PaymentStatus } from '@/types/payment'
 import { formatCurrency, formatShortDate, toISODate } from '@/utils/dates'
 
 const store = usePaymentsStore()
+const csv = useCsvDownload()
 
 const filters: { value: PaymentStatus | 'all'; label: string }[] = [
   { value: 'all', label: 'Todos' },
@@ -85,8 +87,15 @@ const statusClass = (status: PaymentStatus) =>
         </button>
       </div>
 
-      <Button label="Nuevo pago" @click="store.openDialog()" />
+      <div class="flex items-center gap-4">
+        <button type="button" class="cursor-pointer text-xs text-app-muted underline underline-offset-4 hover:text-app-text" :disabled="csv.downloading.value !== null" @click="csv.download('payments')">
+          Exportar (CSV)
+        </button>
+        <Button label="Nuevo pago" @click="store.openDialog()" />
+      </div>
     </div>
+
+    <p v-if="csv.error.value" class="text-sm text-app-danger" role="alert">{{ csv.error.value }}</p>
 
     <p v-if="store.loadError || actionError" class="border-l-2 border-app-danger bg-app-accent-soft px-3 py-2 text-sm text-app-danger" role="alert">
       {{ store.loadError || actionError }}

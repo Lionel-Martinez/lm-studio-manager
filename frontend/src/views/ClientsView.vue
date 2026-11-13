@@ -4,12 +4,14 @@ import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
 
+import { useCsvDownload } from '@/composables/useCsvDownload'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import { useClientsStore } from '@/stores/clients'
 import type { Client, ClientProject } from '@/types/client'
 import { formatShortDate } from '@/utils/dates'
 
 const store = useClientsStore()
+const csv = useCsvDownload()
 
 onMounted(() => store.fetchClients(1))
 
@@ -87,10 +89,18 @@ const formatDate = (value: string | null) => (value ? formatShortDate(value) : '
         <InputText v-model="store.search" placeholder="Buscar por nombre, empresa, correo o teléfono" fluid />
       </label>
 
-      <p v-if="store.meta" class="text-xs text-app-muted">
-        {{ store.meta.total }} {{ store.meta.total === 1 ? 'cliente' : 'clientes' }}
-      </p>
+      <div class="flex items-center gap-4 text-xs text-app-muted">
+        <p v-if="store.meta">{{ store.meta.total }} {{ store.meta.total === 1 ? 'cliente' : 'clientes' }}</p>
+        <button type="button" class="cursor-pointer underline underline-offset-4 hover:text-app-text" :disabled="csv.downloading.value !== null" @click="csv.download('clients')">
+          Exportar clientes (CSV)
+        </button>
+        <button type="button" class="cursor-pointer underline underline-offset-4 hover:text-app-text" :disabled="csv.downloading.value !== null" @click="csv.download('projects')">
+          Exportar proyectos (CSV)
+        </button>
+      </div>
     </div>
+
+    <p v-if="csv.error.value" class="text-sm text-app-danger" role="alert">{{ csv.error.value }}</p>
 
     <p v-if="store.loadError" class="border-l-2 border-app-danger bg-app-accent-soft px-3 py-2 text-sm text-app-danger" role="alert">
       {{ store.loadError }}

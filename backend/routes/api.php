@@ -4,6 +4,7 @@ use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ExportController;
 use App\Http\Controllers\GeoController;
 use App\Http\Controllers\NoteController;
 use App\Http\Controllers\PaymentController;
@@ -26,6 +27,11 @@ Route::middleware('web')->group(function () {
         Route::get('account/activity', [AccountController::class, 'activity']);
 
         Route::apiResource('clients', ClientController::class);
+        Route::prefix('export')->middleware('throttle:20,1')->group(function () {
+            Route::get('clients', [ExportController::class, 'clients']);
+            Route::get('projects', [ExportController::class, 'projects']);
+            Route::get('payments', [ExportController::class, 'payments']);
+        });
         Route::get('geo/countries', [GeoController::class, 'countries']);
         Route::get('geo/regions', [GeoController::class, 'regions']);
         Route::get('dashboard', DashboardController::class);

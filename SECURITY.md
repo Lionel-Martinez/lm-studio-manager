@@ -21,6 +21,15 @@
 7. `composer audit` y `npm audit` de vez en cuando; mantener PHP y dependencias actualizadas.
 8. Si usás un proxy/hosting, configurar `TrustProxies` para que las IP y HTTPS se detecten bien.
 
+## Copias de seguridad
+- Manual: `php artisan app:backup` → guarda `backup-AAAAMMDD-HHMMSS.sql.gz` en `backend/storage/app/private/backups/` (fuera de la parte pública) y conserva las últimas `BACKUP_KEEP` (14 por defecto).
+- Usa `mysqldump`. Si no está en el PATH (XAMPP en Linux), poné en `.env`: `BACKUP_MYSQLDUMP_PATH=/opt/lampp/bin/mysqldump`. La contraseña de la base no viaja en la línea de comandos.
+- Automático: ya está programada a las 03:00. Hace falta una sola entrada de cron: `* * * * * cd /ruta/al/proyecto/backend && php artisan schedule:run >> /dev/null 2>&1`.
+- **Una copia que vive en el mismo servidor no alcanza:** copiá la carpeta `backups/` a otro lugar (disco externo o nube) de vez en cuando, y probá restaurar: `gunzip -c backup-….sql.gz | mysql -u usuario -p base_de_pruebas`.
+
+## Exportación de datos
+- Botones "Exportar (CSV)" en Clientes, Proyectos y Pagos. Requieren sesión, tienen límite de uso y quedan en la actividad de la cuenta. Los CSV abren bien en Excel en español (separador `;`, acentos) y neutralizan textos que empiezan con `=`, `+`, `-` o `@`.
+
 ## Pendiente / ideas
 - Verificación en dos pasos (TOTP) — requiere decidir librería.
 - Bloqueo por IP a nivel servidor (fail2ban / WAF).
