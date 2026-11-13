@@ -9,9 +9,21 @@ import UpcomingPayments from '@/components/dashboard/UpcomingPayments.vue'
 import WaitingList from '@/components/dashboard/WaitingList.vue'
 import SectionBlock from '@/components/ui/SectionBlock.vue'
 import { useDashboard } from '@/composables/useDashboard'
-import { formatCurrency } from '@/utils/dates'
+import { addDays, formatCurrency, parseISODate, startOfDay } from '@/utils/dates'
 
-const { isSample, projects, payments, revenue, distribution, waitingList, kpis } = useDashboard()
+const { loading, error, projects, payments, revenue, distribution, waitingList, kpis } = useDashboard()
+
+/** Proyectos sin entregar cuya fecha de entrega cae en los próximos 14 días. */
+const dueSoon = computed(() => {
+  const today = startOfDay(new Date())
+  const limit = addDays(today, 14)
+
+  return projects.value.filter((p) => {
+    if (!p.dueDate) return false
+    const due = parseISODate(p.dueDate)
+    return due >= today && due <= limit
+  }).length
+})
 
 const kpiItems = computed<KpiItem[]>(() => [
   {
@@ -41,18 +53,20 @@ const kpiItems = computed<KpiItem[]>(() => [
     tone: kpis.value.overdueCount > 0 ? 'danger' : 'default',
   },
   {
-    label: 'Pruebas gratuitas',
-    value: String(kpis.value.freeTrials),
-    note: 'Períodos de prueba activos',
+    label: 'Entregas próximas',
+    value: String(dueSoon.value),
+    note: 'En los próximos 14 días',
   },
 ])
 </script>
 
 <template>
   <div class="space-y-10">
-    <p v-if="isSample" class="text-xs text-app-muted">
-      Datos de ejemplo: se reemplazan por los reales cuando se conecte la base de datos.
+    <p v-if="error" class="border-l-2 border-app-danger bg-app-accent-soft px-3 py-2 text-sm text-app-danger" role="alert">
+      {{ error }}
     </p>
+
+    <p v-else-if="loading" class="text-xs text-app-muted" role="status">Cargando resumen…</p>
 
     <KpiStrip :items="kpiItems" />
 
