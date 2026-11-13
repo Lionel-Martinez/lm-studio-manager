@@ -10,6 +10,7 @@ const navigation = [
   { name: 'Servicios', path: '/servicios' },
   { name: 'Pagos', path: '/pagos' },
   { name: 'Reportes', path: '/reportes' },
+  { name: 'Notas', path: '/notas' },
   { name: 'Geografía', path: '/geografia' },
   { name: 'Cuenta', path: '/cuenta' },
 ]

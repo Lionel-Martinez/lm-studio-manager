@@ -62,6 +62,15 @@ const router = createRouter({
           },
         },
         {
+          path: 'notas',
+          name: 'notas',
+          component: () => import('@/views/NotesView.vue'),
+          meta: {
+            title: 'Notas',
+            description: 'Documentación, acuerdos y plantillas en Markdown.',
+          },
+        },
+        {
           path: 'cuenta',
           name: 'cuenta',
           component: () => import('@/views/AccountView.vue'),

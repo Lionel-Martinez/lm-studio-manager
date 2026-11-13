@@ -26,3 +26,22 @@
 .tabular {
   font-variant-numeric: tabular-nums;
 }
+
+/* Notas en Markdown */
+.markdown { line-height: 1.65; font-size: 0.9375rem; overflow-wrap: anywhere; }
+.markdown > :first-child { margin-top: 0; }
+.markdown h1, .markdown h2, .markdown h3 { font-family: var(--font-display); font-weight: 500; line-height: 1.2; margin: 1.4em 0 0.5em; }
+.markdown h1 { font-size: 1.6rem; }
+.markdown h2 { font-size: 1.3rem; }
+.markdown h3 { font-size: 1.1rem; }
+.markdown p, .markdown ul, .markdown ol, .markdown pre, .markdown blockquote, .markdown table { margin: 0.7em 0; }
+.markdown ul { list-style: disc; padding-left: 1.4em; }
+.markdown ol { list-style: decimal; padding-left: 1.4em; }
+.markdown a { color: var(--app-accent); text-decoration: underline; text-underline-offset: 3px; }
+.markdown blockquote { border-left: 2px solid var(--app-rule); padding-left: 1em; color: var(--app-muted); }
+.markdown code { background: var(--app-sunken); padding: 0.1em 0.35em; font-size: 0.875em; }
+.markdown pre { background: var(--app-sunken); padding: 0.8em 1em; overflow-x: auto; }
+.markdown pre code { background: none; padding: 0; }
+.markdown hr { border: 0; border-top: 1px solid var(--app-border); margin: 1.2em 0; }
+.markdown table { border-collapse: collapse; }
+.markdown th, .markdown td { border: 1px solid var(--app-border); padding: 0.3em 0.7em; text-align: left; }
