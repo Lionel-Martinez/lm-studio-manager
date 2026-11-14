@@ -26,6 +26,14 @@ export interface ClientProject {
 export type ClientType = 'person' | 'company'
 
 export type CommercialStatus = 'new' | 'active' | 'inactive'
+export type DeactivationReason = 'non_payment' | 'no_activity' | 'client_request' | 'other'
+
+export const deactivationReasonLabels: Record<DeactivationReason, string> = {
+  non_payment: 'Falta de pago',
+  no_activity: 'Sin actividad',
+  client_request: 'Lo pidió el cliente',
+  other: 'Otro motivo',
+}
 
 export const commercialStatusLabels: Record<CommercialStatus, string> = {
   new: 'Nuevo',
@@ -48,6 +56,10 @@ export interface Client {
   client_type: ClientType
   commercial_status: CommercialStatus
   commercial_status_label: string
+  deactivated_at: string | null
+  deactivation_reason: DeactivationReason | null
+  deactivation_reason_label: string | null
+  deactivation_note: string | null
   first_contact_at: string | null
   source: string | null
   notes: string | null

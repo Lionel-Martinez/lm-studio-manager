@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\CommercialStatus;
 use App\Enums\ProjectStatus;
+use App\Http\Requests\DeactivateClientRequest;
 use App\Http\Requests\StoreClientRequest;
 use App\Http\Requests\UpdateClientRequest;
 use App\Models\AuditLog;
@@ -14,12 +16,14 @@ use Illuminate\Http\Response;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class ClientController extends Controller
 {
     public function index(Request $request): AnonymousResourceCollection
     {
         $search = trim((string) $request->query('search', ''));
+        $status = $request->validate(['status' => ['nullable', Rule::enum(CommercialStatus::class)]])['status'] ?? null;
 
         $clients = Client::query()
             ->with(['country', 'region.parent', 'projects' => fn ($query) => $query->orderBy('entry_date', 'desc')])
@@ -32,6 +36,7 @@ class ClientController extends Controller
                         ->orWhere('phone', 'like', "%{$search}%");
                 });
             })
+            ->when($status, fn ($query, $value) => $query->where('commercial_status', $value))
             ->latest()
             ->paginate(min(max((int) $request->query('per_page', 15), 1), 100));
 
@@ -82,9 +87,47 @@ class ClientController extends Controller
 
     public function update(UpdateClientRequest $request, Client $client): ClientResource
     {
-        $client->update($request->validated());
+        $data = $request->validated();
+
+        // Si se lo vuelve a poner activo/nuevo a mano, ya no corresponde el motivo de desactivación.
+        if (isset($data['commercial_status']) && $data['commercial_status'] !== CommercialStatus::Inactive->value) {
+            $data += ['deactivated_at' => null, 'deactivation_reason' => null, 'deactivation_note' => null];
+        }
+
+        $client->update($data);
 
         AuditLog::record('client.updated', $client, ['name' => $client->display_name]);
+
+        return ClientResource::make($client->refresh()->load(['projects', 'country', 'region.parent']));
+    }
+
+    /** Desactivar no borra nada: el cliente sigue en la lista, marcado como inactivo y con su motivo. */
+    public function deactivate(DeactivateClientRequest $request, Client $client): ClientResource
+    {
+        $data = $request->validated();
+
+        $client->update([
+            'commercial_status' => CommercialStatus::Inactive,
+            'deactivated_at' => now(),
+            'deactivation_reason' => $data['reason'],
+            'deactivation_note' => $data['note'] ?? null,
+        ]);
+
+        AuditLog::record('client.deactivated', $client, ['name' => $client->display_name, 'reason' => $data['reason']]);
+
+        return ClientResource::make($client->refresh()->load(['projects', 'country', 'region.parent']));
+    }
+
+    public function reactivate(Client $client): ClientResource
+    {
+        $client->update([
+            'commercial_status' => CommercialStatus::Active,
+            'deactivated_at' => null,
+            'deactivation_reason' => null,
+            'deactivation_note' => null,
+        ]);
+
+        AuditLog::record('client.reactivated', $client, ['name' => $client->display_name]);
 
         return ClientResource::make($client->refresh()->load(['projects', 'country', 'region.parent']));
     }

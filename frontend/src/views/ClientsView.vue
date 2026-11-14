@@ -3,11 +3,13 @@ import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
+import Select from 'primevue/select'
+import Textarea from 'primevue/textarea'
 
 import { useCsvDownload } from '@/composables/useCsvDownload'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import { useClientsStore } from '@/stores/clients'
-import type { Client, ClientProject } from '@/types/client'
+import { deactivationReasonLabels, type Client, type ClientProject, type DeactivationReason } from '@/types/client'
 import { formatShortDate } from '@/utils/dates'
 
 const store = useClientsStore()
@@ -24,7 +26,52 @@ watch(
     searchTimer = setTimeout(() => store.fetchClients(1), 300)
   },
 )
+watch(() => store.statusFilter, () => store.fetchClients(1))
 onBeforeUnmount(() => clearTimeout(searchTimer))
+
+const statusOptions = [
+  { value: '', label: 'Todos los estados' },
+  { value: 'new', label: 'Nuevos' },
+  { value: 'active', label: 'Activos' },
+  { value: 'inactive', label: 'Inactivos' },
+]
+const reasonOptions = (Object.keys(deactivationReasonLabels) as DeactivationReason[]).map((value) => ({ value, label: deactivationReasonLabels[value] }))
+
+const toDeactivate = ref<Client | null>(null)
+const reason = ref<DeactivationReason>('non_payment')
+const reasonNote = ref('')
+const deactivating = ref(false)
+const statusError = ref('')
+
+function askDeactivate(client: Client) {
+  toDeactivate.value = client
+  reason.value = 'non_payment'
+  reasonNote.value = ''
+  statusError.value = ''
+}
+
+async function confirmDeactivate() {
+  if (!toDeactivate.value) return
+  deactivating.value = true
+  statusError.value = ''
+  try {
+    await store.deactivateClient(toDeactivate.value.id, reason.value, reasonNote.value.trim() || null)
+    toDeactivate.value = null
+  } catch {
+    statusError.value = 'No se pudo desactivar el cliente. Intentá de nuevo.'
+  } finally {
+    deactivating.value = false
+  }
+}
+
+async function reactivate(client: Client) {
+  statusError.value = ''
+  try {
+    await store.reactivateClient(client.id)
+  } catch {
+    statusError.value = 'No se pudo reactivar el cliente. Intentá de nuevo.'
+  }
+}
 
 /** El proyecto que más importa de un cliente: el más reciente que todavía no se entregó. */
 function mainProject(client: Client): ClientProject | undefined {
@@ -89,7 +136,8 @@ const formatDate = (value: string | null) => (value ? formatShortDate(value) : '
         <InputText v-model="store.search" placeholder="Buscar por nombre, empresa, correo o teléfono" fluid />
       </label>
 
-      <div class="flex items-center gap-4 text-xs text-app-muted">
+      <div class="flex flex-wrap items-center gap-4 text-xs text-app-muted">
+        <Select v-model="store.statusFilter" :options="statusOptions" option-label="label" option-value="value" aria-label="Filtrar por estado" size="small" />
         <p v-if="store.meta">{{ store.meta.total }} {{ store.meta.total === 1 ? 'cliente' : 'clientes' }}</p>
         <button type="button" class="cursor-pointer underline underline-offset-4 hover:text-app-text" :disabled="csv.downloading.value !== null" @click="csv.download('clients')">
           Exportar clientes (CSV)
@@ -101,6 +149,7 @@ const formatDate = (value: string | null) => (value ? formatShortDate(value) : '
     </div>
 
     <p v-if="csv.error.value" class="text-sm text-app-danger" role="alert">{{ csv.error.value }}</p>
+    <p v-if="statusError" class="text-sm text-app-danger" role="alert">{{ statusError }}</p>
 
     <p v-if="store.loadError" class="border-l-2 border-app-danger bg-app-accent-soft px-3 py-2 text-sm text-app-danger" role="alert">
       {{ store.loadError }}
@@ -137,6 +186,9 @@ const formatDate = (value: string | null) => (value ? formatShortDate(value) : '
                 <span class="ml-1 text-xs font-normal text-app-muted">{{ client.commercial_status_label }}</span>
               </p>
               <p class="text-xs text-app-muted">{{ contactLine(client) }}</p>
+              <p v-if="client.commercial_status === 'inactive' && client.deactivation_reason_label" class="text-xs text-app-danger">
+                Desactivado: {{ client.deactivation_reason_label }}<template v-if="client.deactivation_note"> — {{ client.deactivation_note }}</template>
+              </p>
             </td>
 
             <template v-if="mainProject(client)">
@@ -164,6 +216,8 @@ const formatDate = (value: string | null) => (value ? formatShortDate(value) : '
                 Proyectos ({{ client.projects.length }})
               </button>
               <button type="button" class="cursor-pointer underline underline-offset-4 hover:text-app-accent" :aria-label="`Editar ${client.display_name}`" @click="store.openDialog(client)">Editar</button>
+              <button v-if="client.commercial_status !== 'inactive'" type="button" class="ml-3 cursor-pointer underline underline-offset-4 hover:text-app-accent" :aria-label="`Desactivar ${client.display_name}`" @click="askDeactivate(client)">Desactivar</button>
+              <button v-else type="button" class="ml-3 cursor-pointer underline underline-offset-4 hover:text-app-accent" :aria-label="`Reactivar ${client.display_name}`" @click="reactivate(client)">Reactivar</button>
               <button type="button" class="ml-3 cursor-pointer text-app-muted underline underline-offset-4 hover:text-app-danger" :aria-label="`Eliminar ${client.display_name}`" @click="toDelete = client; deleteError = ''">Eliminar</button>
             </td>
           </tr>
@@ -205,6 +259,23 @@ const formatDate = (value: string | null) => (value ? formatShortDate(value) : '
     <template #footer>
       <Button label="Cancelar" severity="secondary" text :disabled="deletingProject" @click="projectToDelete = null" />
       <Button label="Eliminar" severity="danger" :loading="deletingProject" @click="confirmDeleteProject" />
+    </template>
+  </Dialog>
+
+  <Dialog :visible="toDeactivate !== null" modal header="Desactivar cliente" :draggable="false" :style="{ width: '30rem', maxWidth: '95vw' }" @update:visible="(v: boolean) => { if (!v) toDeactivate = null }">
+    <p class="text-sm">
+      <strong>{{ toDeactivate?.display_name }}</strong> queda como inactivo, pero no se borra nada: sus proyectos, pagos y notas se conservan. Sus entregas dejan de aparecer en la agenda; los cobros pendientes siguen apareciendo. Podés reactivarlo cuando quieras.
+    </p>
+    <div class="mt-4 space-y-3">
+      <label class="block text-sm font-medium" for="deact-reason">Motivo</label>
+      <Select v-model="reason" input-id="deact-reason" :options="reasonOptions" option-label="label" option-value="value" fluid />
+      <label class="block text-sm font-medium" for="deact-note">Nota (opcional)</label>
+      <Textarea id="deact-note" v-model="reasonNote" rows="2" maxlength="300" fluid />
+    </div>
+    <p v-if="statusError" class="mt-3 text-sm text-app-danger" role="alert">{{ statusError }}</p>
+    <template #footer>
+      <Button label="Cancelar" severity="secondary" text :disabled="deactivating" @click="toDeactivate = null" />
+      <Button label="Desactivar" :loading="deactivating" @click="confirmDeactivate" />
     </template>
   </Dialog>
 

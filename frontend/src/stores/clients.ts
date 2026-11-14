@@ -2,12 +2,14 @@ import { ref } from 'vue'
 import { defineStore } from 'pinia'
 
 import { api } from '@/lib/api'
-import type { Client, ClientDataPayload, ClientProject, NewClientPayload, NewProjectPayload, PaginationMeta } from '@/types/client'
+import type { Client, ClientDataPayload, CommercialStatus, DeactivationReason, ClientProject, NewClientPayload, NewProjectPayload, PaginationMeta } from '@/types/client'
 
 export const useClientsStore = defineStore('clients', () => {
   const items = ref<Client[]>([])
   const meta = ref<PaginationMeta | null>(null)
   const search = ref('')
+  /** Filtro por estado comercial; vacío = todos. */
+  const statusFilter = ref<CommercialStatus | ''>('')
   const loading = ref(false)
   const loadError = ref<string | null>(null)
 
@@ -22,7 +24,7 @@ export const useClientsStore = defineStore('clients', () => {
 
     try {
       const { data } = await api.get('/clients', {
-        params: { page, search: search.value.trim() || undefined },
+        params: { page, search: search.value.trim() || undefined, status: statusFilter.value || undefined },
       })
 
       items.value = page === 1 ? data.data : [...items.value, ...data.data]
@@ -51,6 +53,17 @@ export const useClientsStore = defineStore('clients', () => {
     const { data } = await api.put(`/clients/${id}`, payload)
     await fetchClients(1)
     return data.data
+  }
+
+  /** Desactivar no elimina: el cliente queda marcado como inactivo con su motivo. */
+  async function deactivateClient(id: number, reason: DeactivationReason, note: string | null) {
+    await api.post(`/clients/${id}/deactivate`, { reason, note })
+    await fetchClients(1)
+  }
+
+  async function reactivateClient(id: number) {
+    await api.post(`/clients/${id}/reactivate`)
+    await fetchClients(1)
   }
 
   /** Baja lógica en el backend: el cliente se oculta pero su historial se conserva. */
@@ -98,6 +111,9 @@ export const useClientsStore = defineStore('clients', () => {
     items,
     meta,
     search,
+    statusFilter,
+    deactivateClient,
+    reactivateClient,
     loading,
     loadError,
     dialogOpen,

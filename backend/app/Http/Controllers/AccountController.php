@@ -84,6 +84,8 @@ class AccountController extends Controller
         'note.created' => 'Nota creada',
         'note.updated' => 'Nota modificada',
         'note.deleted' => 'Nota eliminada',
+        'client.deactivated' => 'Cliente desactivado',
+        'client.reactivated' => 'Cliente reactivado',
         'reminder.created' => 'Recordatorio creado',
         'reminder.updated' => 'Recordatorio modificado',
         'reminder.deleted' => 'Recordatorio eliminado',

@@ -38,6 +38,8 @@ Route::middleware('web')->group(function () {
         });
         Route::get('account/activity', [AccountController::class, 'activity']);
 
+        Route::post('clients/{client}/deactivate', [ClientController::class, 'deactivate']);
+        Route::post('clients/{client}/reactivate', [ClientController::class, 'reactivate']);
         Route::apiResource('clients', ClientController::class);
         Route::prefix('export')->middleware('throttle:20,1')->group(function () {
             Route::get('clients', [ExportController::class, 'clients']);

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\CommercialStatus;
 use App\Enums\ProjectStatus;
 use App\Models\Payment;
 use App\Models\Project;
@@ -47,7 +48,7 @@ class AgendaController extends Controller
         $events = collect();
 
         // Entregas: proyectos sin entregar con fecha de entrega.
-        Project::query()->with('client')->whereHas('client')
+        Project::query()->with('client')->whereHas('client', fn ($q) => $q->where('commercial_status', '!=', CommercialStatus::Inactive->value))
             ->where('status', '!=', ProjectStatus::Delivered->value)
             ->whereNotNull('due_date')->whereDate('due_date', '<=', $until)
             ->get()
@@ -59,7 +60,7 @@ class AgendaController extends Controller
             ]));
 
         // Inicios: proyectos que todavía no arrancaron y tienen fecha estimada de inicio.
-        Project::query()->with('client')->whereHas('client')
+        Project::query()->with('client')->whereHas('client', fn ($q) => $q->where('commercial_status', '!=', CommercialStatus::Inactive->value))
             ->whereIn('status', [ProjectStatus::Prospect->value, ProjectStatus::Waiting->value])
             ->whereNotNull('estimated_start_date')->whereDate('estimated_start_date', '<=', $until)
             ->get()

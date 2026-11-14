@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\ClientType;
 use App\Enums\CommercialStatus;
+use App\Enums\DeactivationReason;
 use App\Enums\ProjectStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -30,6 +31,9 @@ class Client extends Model
         'source',
         'client_type',
         'commercial_status',
+        'deactivated_at',
+        'deactivation_reason',
+        'deactivation_note',
         'notes',
     ];
 
@@ -39,6 +43,8 @@ class Client extends Model
             'first_contact_at' => 'date',
             'client_type' => ClientType::class,
             'commercial_status' => CommercialStatus::class,
+            'deactivated_at' => 'datetime',
+            'deactivation_reason' => DeactivationReason::class,
         ];
     }
 
