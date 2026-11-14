@@ -46,7 +46,7 @@ const notice = ref('')
 
 const dialog = computed(() => store.pricingDialog)
 const visible = computed({
-  get: () => dialog.value !== null,
+  get: () => !!dialog.value,
   set: (value: boolean) => {
     if (!value) store.closePricingDialog()
   },

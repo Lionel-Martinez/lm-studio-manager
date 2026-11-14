@@ -28,7 +28,12 @@ watch(
   },
 )
 watch(() => store.statusFilter, () => store.fetchClients(1))
-onBeforeUnmount(() => clearTimeout(searchTimer))
+onBeforeUnmount(() => {
+  clearTimeout(searchTimer)
+  // Al salir de la pantalla no debe quedar ningún diálogo abierto en el store.
+  store.closePricingDialog()
+  store.closeProjectDialog()
+})
 
 const statusOptions = [
   { value: '', label: 'Todos los estados' },
@@ -138,7 +143,7 @@ const formatDate = (value: string | null) => (value ? formatShortDate(value) : '
       </label>
 
       <div class="flex flex-wrap items-center gap-4 text-xs text-app-muted">
-        <Select v-model="store.statusFilter" :options="statusOptions" option-label="label" option-value="value" aria-label="Filtrar por estado" size="small" />
+        <Select v-model="store.statusFilter" :options="statusOptions" option-label="label" option-value="value" aria-label="Filtrar por estado" placeholder="Todos los estados" size="small" />
         <p v-if="store.meta">{{ store.meta.total }} {{ store.meta.total === 1 ? 'cliente' : 'clientes' }}</p>
         <button type="button" class="cursor-pointer underline underline-offset-4 hover:text-app-text" :disabled="csv.downloading.value !== null" @click="csv.download('clients')">
           Exportar clientes (CSV)
