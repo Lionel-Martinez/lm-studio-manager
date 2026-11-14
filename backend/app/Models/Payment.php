@@ -12,7 +12,7 @@ class Payment extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['client_id', 'project_id', 'concept', 'amount', 'due_date', 'paid_at', 'method', 'notes'];
+    protected $fillable = ['client_id', 'project_id', 'plan_item', 'concept', 'amount', 'due_date', 'paid_at', 'method', 'notes'];
 
     protected function casts(): array
     {

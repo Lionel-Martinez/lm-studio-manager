@@ -16,7 +16,7 @@ class ExportController extends Controller
     {
         AuditLog::record('export.clients');
 
-        $rows = Client::query()->with(['country', 'region.parent'])->orderBy('id')->lazyById(200)->map(fn (Client $c) => [
+        $rows = Client::query()->with(['country', 'region.parent', 'locality'])->orderBy('id')->lazyById(200)->map(fn (Client $c) => [
             $c->id,
             $c->first_name,
             $c->last_name,
@@ -29,6 +29,7 @@ class ExportController extends Controller
             $c->country?->name,
             $c->region?->parent?->name ?? $c->region?->name,
             $c->region?->parent ? $c->region->name : null,
+            $c->locality?->name,
             $c->commercial_status?->label(),
             $c->first_contact_at?->toDateString(),
             $c->source,
@@ -37,7 +38,7 @@ class ExportController extends Controller
 
         return CsvExport::download('clientes-'.today()->toDateString().'.csv', [
             'ID', 'Nombre', 'Apellido', 'Empresa', 'CUIT/DNI', 'Correo', 'Teléfono', 'WhatsApp', 'Sitio web',
-            'País', 'Provincia', 'Departamento', 'Estado', 'Primer contacto', 'Origen', 'Notas',
+            'País', 'Provincia', 'Departamento', 'Localidad', 'Estado', 'Primer contacto', 'Origen', 'Notas',
         ], $rows);
     }
 

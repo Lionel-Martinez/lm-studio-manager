@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Client;
 use App\Models\Country;
+use App\Models\Locality;
 use App\Models\Region;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -69,5 +70,33 @@ class GeoApiTest extends TestCase
         $client = Client::create(['first_name' => 'Leo', 'last_name' => 'Paz', 'country_id' => $this->ar->id, 'region_id' => $this->salta->id]);
 
         $this->getJson("/api/clients/{$client->id}")->assertJsonPath('data.location_label', 'Salta')->assertJsonPath('data.province_id', $this->salta->id);
+    }
+
+    public function test_lista_localidades_de_un_departamento(): void
+    {
+        Locality::create(['region_id' => $this->oran->id, 'name' => 'San Ramón de la Nueva Orán', 'municipality' => 'San Ramón de la Nueva Orán']);
+        Locality::create(['region_id' => $this->oran->id, 'name' => 'Pichanal', 'municipality' => 'Pichanal']);
+
+        $this->getJson("/api/geo/localities?region_id={$this->oran->id}")
+            ->assertOk()->assertJsonCount(2, 'data')->assertJsonPath('data.0.name', 'Pichanal');
+
+        $this->getJson('/api/geo/localities')->assertUnprocessable()->assertJsonValidationErrors('region_id');
+    }
+
+    public function test_el_cliente_guarda_localidad_solo_si_es_del_departamento(): void
+    {
+        $pichanal = Locality::create(['region_id' => $this->oran->id, 'name' => 'Pichanal']);
+        $otra = Region::create(['country_id' => $this->ar->id, 'parent_id' => $this->salta->id, 'name' => 'Anta', 'region_type' => 'department']);
+        $lejana = Locality::create(['region_id' => $otra->id, 'name' => 'Joaquín V. González']);
+
+        $base = ['first_name' => 'Ana', 'last_name' => 'Ruiz', 'country_id' => $this->ar->id, 'region_id' => $this->oran->id];
+
+        $this->postJson('/api/clients', $base + ['locality_id' => $lejana->id])
+            ->assertUnprocessable()->assertJsonValidationErrors('locality_id');
+
+        $this->postJson('/api/clients', $base + ['locality_id' => $pichanal->id])
+            ->assertCreated()
+            ->assertJsonPath('data.locality_name', 'Pichanal')
+            ->assertJsonPath('data.location_label', 'Pichanal, Orán, Salta');
     }
 }

@@ -17,7 +17,7 @@ class GeographyOverviewController extends Controller
     {
         $collected = Payment::query()->whereNotNull('paid_at')->selectRaw('client_id, SUM(amount) as total')->groupBy('client_id')->pluck('total', 'client_id');
 
-        $clients = Client::query()->with(['country', 'region.parent'])->get();
+        $clients = Client::query()->with(['country', 'region.parent', 'locality'])->get();
 
         $located = $clients->filter(fn (Client $c) => $c->country_id !== null);
 
@@ -38,6 +38,13 @@ class GeographyOverviewController extends Controller
             $collected,
         );
 
+        $localities = $this->group(
+            $clients->filter(fn (Client $c) => $c->locality !== null),
+            fn (Client $c) => $c->locality_id,
+            fn (Client $c) => ['name' => $c->locality->name, 'department_id' => $c->locality->region_id, 'municipality' => $c->locality->municipality],
+            $collected,
+        );
+
         $unlocated = $clients->filter(fn (Client $c) => $c->country_id === null);
 
         return response()->json(['data' => [
@@ -45,6 +52,7 @@ class GeographyOverviewController extends Controller
             'countries' => $countries,
             'provinces' => $provinces,
             'departments' => $departments,
+            'localities' => $localities,
             'unlocated' => [
                 'clients' => $unlocated->count(),
                 'revenue' => (float) $unlocated->sum(fn (Client $c) => (float) ($collected[$c->id] ?? 0)),

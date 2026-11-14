@@ -2,7 +2,7 @@ import { ref } from 'vue'
 import { defineStore } from 'pinia'
 
 import { api } from '@/lib/api'
-import type { Client, ClientDataPayload, CommercialStatus, DeactivationReason, ClientProject, NewClientPayload, NewProjectPayload, PaginationMeta } from '@/types/client'
+import type { PricingPayload, PricingSchedule, Client, ClientDataPayload, CommercialStatus, DeactivationReason, ClientProject, NewClientPayload, NewProjectPayload, PaginationMeta } from '@/types/client'
 
 export const useClientsStore = defineStore('clients', () => {
   const items = ref<Client[]>([])
@@ -79,6 +79,29 @@ export const useClientsStore = defineStore('clients', () => {
     projectDialog.value = { clientId: client.id, clientName: client.display_name, project }
   }
 
+  /** Diálogo de precio y plan de pago de un proyecto. */
+  const pricingDialog = ref<{ clientName: string; project: ClientProject } | null>(null)
+
+  function openPricingDialog(client: Client, project: ClientProject) {
+    pricingDialog.value = { clientName: client.display_name, project }
+  }
+
+  function closePricingDialog() {
+    pricingDialog.value = null
+  }
+
+  async function previewPricing(projectId: number, payload: PricingPayload): Promise<PricingSchedule> {
+    const { data } = await api.post(`/projects/${projectId}/pricing/preview`, payload)
+    return data.data
+  }
+
+  /** Guarda el plan; con `generate` también crea los pagos del calendario. */
+  async function savePricing(projectId: number, payload: PricingPayload, generate: boolean): Promise<PricingSchedule> {
+    const { data } = await api.put(`/projects/${projectId}/pricing`, { ...payload, generate })
+    await fetchClients(1)
+    return data.data
+  }
+
   function closeProjectDialog() {
     projectDialog.value = null
   }
@@ -119,6 +142,11 @@ export const useClientsStore = defineStore('clients', () => {
     dialogOpen,
     editing,
     projectDialog,
+    pricingDialog,
+    openPricingDialog,
+    closePricingDialog,
+    previewPricing,
+    savePricing,
     openProjectDialog,
     closeProjectDialog,
     saveProject,

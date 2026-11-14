@@ -7,10 +7,11 @@ import Select from 'primevue/select'
 import Textarea from 'primevue/textarea'
 
 import { useCsvDownload } from '@/composables/useCsvDownload'
+import ProjectPricingDialog from '@/components/clients/ProjectPricingDialog.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import { useClientsStore } from '@/stores/clients'
 import { deactivationReasonLabels, type Client, type ClientProject, type DeactivationReason } from '@/types/client'
-import { formatShortDate } from '@/utils/dates'
+import { formatCurrency, formatShortDate } from '@/utils/dates'
 
 const store = useClientsStore()
 const csv = useCsvDownload()
@@ -233,9 +234,13 @@ const formatDate = (value: string | null) => (value ? formatShortDate(value) : '
                       {{ formatDate(project.entry_date) }} → {{ formatDate(project.estimated_start_date) }} → {{ formatDate(project.due_date) }}
                     </span>
                     <span v-if="project.delay_reason" class="ml-2 text-xs text-app-danger">Demora: {{ project.delay_reason }}</span>
+                    <span v-if="project.total_price || project.monthly_fee" class="tabular ml-2 text-xs text-app-muted">
+                      {{ [project.total_price ? `${formatCurrency(project.total_price)} (${project.payment_mode_label?.toLowerCase()})` : null, project.monthly_fee ? `${formatCurrency(project.monthly_fee)}/mes` : null].filter(Boolean).join(' + ') }}
+                    </span>
                   </span>
                   <span class="whitespace-nowrap text-xs">
-                    <button type="button" class="cursor-pointer underline underline-offset-4 hover:text-app-accent" @click="store.openProjectDialog(client, project)">Editar</button>
+                    <button type="button" class="cursor-pointer underline underline-offset-4 hover:text-app-accent" @click="store.openPricingDialog(client, project)">Precio y pagos</button>
+                    <button type="button" class="ml-3 cursor-pointer underline underline-offset-4 hover:text-app-accent" @click="store.openProjectDialog(client, project)">Editar</button>
                     <button type="button" class="ml-3 cursor-pointer text-app-muted underline underline-offset-4 hover:text-app-danger" @click="projectToDelete = { id: project.id, label: project.name || project.service_type_label }">Eliminar</button>
                   </span>
                 </li>
@@ -253,6 +258,8 @@ const formatDate = (value: string | null) => (value ? formatShortDate(value) : '
       </div>
     </div>
   </div>
+
+  <ProjectPricingDialog />
 
   <Dialog :visible="projectToDelete !== null" modal header="Eliminar proyecto" :draggable="false" :style="{ width: '28rem', maxWidth: '95vw' }" @update:visible="(v: boolean) => { if (!v) projectToDelete = null }">
     <p class="text-sm">¿Eliminar el proyecto <strong>{{ projectToDelete?.label }}</strong>? Se oculta de las listas pero se conserva en la base de datos.</p>

@@ -21,6 +21,41 @@ export interface ClientProject {
   estimated_start_date: string | null
   due_date: string | null
   delay_reason: string | null
+  total_price: number | null
+  payment_mode: PaymentMode | null
+  payment_mode_label: string | null
+  deposit_percent: number | null
+  installments_count: number | null
+  plan_start_date: string | null
+  monthly_fee: number | null
+  monthly_months: number | null
+  free_months: number
+  trial_value: number
+  trial_unit: TrialUnit | null
+}
+
+export type PaymentMode = 'single' | 'split' | 'installments'
+export type TrialUnit = 'days' | 'weeks' | 'months'
+
+export interface PricingPayload {
+  total_price: number | null
+  payment_mode: PaymentMode | null
+  deposit_percent: number | null
+  installments_count: number | null
+  plan_start_date: string
+  monthly_fee: number | null
+  monthly_months: number | null
+  free_months: number
+  trial_value: number
+  trial_unit: TrialUnit | null
+}
+
+export interface PricingSchedule {
+  schedule: { item: string; concept: string; due_date: string; amount: number }[]
+  schedule_total: number
+  existing_plan_payments: number
+  plan_locked: boolean
+  generated: number | null
 }
 
 export type ClientType = 'person' | 'company'
@@ -73,6 +108,8 @@ export interface Client {
   province_name?: string | null
   /** Por ejemplo "Orán, Salta". */
   location_label?: string | null
+  locality_name?: string | null
+  municipality_name?: string | null
   created_at: string
   projects: ClientProject[]
 }
@@ -100,6 +137,7 @@ export interface ClientDataPayload {
   country_id?: number | null
   /** Lugar más específico: el departamento si se eligió, si no la provincia. */
   region_id?: number | null
+  locality_id?: number | null
   notes?: string | null
 }
 

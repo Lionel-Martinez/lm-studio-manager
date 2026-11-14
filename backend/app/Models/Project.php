@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use App\Enums\PaymentMode;
 use App\Enums\ProjectStatus;
 use App\Enums\ServiceType;
+use App\Enums\TrialUnit;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -22,6 +24,16 @@ class Project extends Model
         'estimated_start_date',
         'due_date',
         'delay_reason',
+        'total_price',
+        'payment_mode',
+        'deposit_percent',
+        'installments_count',
+        'plan_start_date',
+        'monthly_fee',
+        'monthly_months',
+        'free_months',
+        'trial_value',
+        'trial_unit',
     ];
 
     protected function casts(): array
@@ -32,6 +44,11 @@ class Project extends Model
             'entry_date' => 'date',
             'estimated_start_date' => 'date',
             'due_date' => 'date',
+            'total_price' => 'decimal:2',
+            'monthly_fee' => 'decimal:2',
+            'payment_mode' => PaymentMode::class,
+            'trial_unit' => TrialUnit::class,
+            'plan_start_date' => 'date',
         ];
     }
 

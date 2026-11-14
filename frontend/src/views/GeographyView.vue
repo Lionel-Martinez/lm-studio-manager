@@ -12,6 +12,7 @@ import { formatCurrency } from '@/utils/dates'
 // Ubicación seleccionada durante la navegación (país → provincia → departamento).
 const selectedCountry = ref<GeographyRankingItem | null>(null)
 const selectedRegion = ref<GeographyRankingItem | null>(null)
+const selectedDepartment = ref<GeographyRankingItem | null>(null)
 
 const overview = ref<GeographyOverview | null>(null)
 const error = ref('')
@@ -33,11 +34,13 @@ function toItems(nodes: GeoNode[]): GeographyRankingItem[] {
 
 const countries = computed(() => toItems(overview.value?.countries ?? []))
 const regions = computed(() => toItems((overview.value?.provinces ?? []).filter((p) => p.country_id === selectedCountry.value?.id)))
-const localities = computed(() => toItems((overview.value?.departments ?? []).filter((d) => d.province_id === selectedRegion.value?.id)))
+const departments = computed(() => toItems((overview.value?.departments ?? []).filter((d) => d.province_id === selectedRegion.value?.id)))
+const localities = computed(() => toItems((overview.value?.localities ?? []).filter((l) => l.department_id === selectedDepartment.value?.id)))
 
 // Determina el nivel geográfico actual.
 const currentLevel = computed(() => {
-  if (selectedRegion.value) return 'localities'
+  if (selectedDepartment.value) return 'localities'
+  if (selectedRegion.value) return 'departments'
   if (selectedCountry.value) return 'regions'
   return 'countries'
 })
@@ -60,6 +63,13 @@ const breadcrumbItems = computed(() => {
     })
   }
 
+  if (selectedDepartment.value) {
+    items.push({
+      id: selectedDepartment.value.id,
+      label: selectedDepartment.value.name,
+    })
+  }
+
   return items
 })
 
@@ -70,6 +80,8 @@ const currentItems = computed(() => {
       return countries.value
     case 'regions':
       return regions.value
+    case 'departments':
+      return departments.value
     default:
       return localities.value
   }
@@ -81,8 +93,10 @@ const rankingTitle = computed(() => {
       return 'Ranking de países'
     case 'regions':
       return `Provincias de ${selectedCountry.value?.name ?? ''}`
-    default:
+    case 'departments':
       return `Departamentos de ${selectedRegion.value?.name ?? ''}`
+    default:
+      return `Ciudades y localidades de ${selectedDepartment.value?.name ?? ''}`
   }
 })
 
@@ -113,8 +127,12 @@ function handleSelect(item: GeographyRankingItem) {
   if (currentLevel.value === 'countries') {
     selectedCountry.value = item
     selectedRegion.value = null
+    selectedDepartment.value = null
   } else if (currentLevel.value === 'regions') {
     selectedRegion.value = item
+    selectedDepartment.value = null
+  } else if (currentLevel.value === 'departments') {
+    selectedDepartment.value = item
   }
 }
 
@@ -123,8 +141,12 @@ function navigateTo(index: number) {
   if (index === 0) {
     selectedCountry.value = null
     selectedRegion.value = null
+    selectedDepartment.value = null
   } else if (index === 1) {
     selectedRegion.value = null
+    selectedDepartment.value = null
+  } else if (index === 2) {
+    selectedDepartment.value = null
   }
 }
 </script>

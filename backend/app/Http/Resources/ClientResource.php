@@ -39,6 +39,8 @@ class ClientResource extends JsonResource
             'region_name' => $this->whenLoaded('region', fn () => $this->region?->name),
             'province_id' => $this->whenLoaded('region', fn () => $this->region?->parent_id ?? $this->region?->id),
             'province_name' => $this->whenLoaded('region', fn () => $this->region?->parent?->name ?? $this->region?->name),
+            'locality_name' => $this->whenLoaded('locality', fn () => $this->locality?->name),
+            'municipality_name' => $this->whenLoaded('locality', fn () => $this->locality?->municipality),
             'location_label' => $this->whenLoaded('region', fn () => $this->locationLabel()),
             'created_at' => $this->created_at?->toIso8601String(),
             'projects' => ProjectResource::collection($this->whenLoaded('projects')),

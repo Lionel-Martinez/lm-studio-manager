@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Country;
+use App\Models\Locality;
 use App\Models\Region;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -33,5 +34,19 @@ class GeoController extends Controller
             ->get(['id', 'name', 'region_type']);
 
         return response()->json(['data' => $regions]);
+    }
+
+    /** Localidades de un departamento (o de la región elegida), para el selector del cliente. */
+    public function localities(Request $request): JsonResponse
+    {
+        $data = $request->validate(['region_id' => ['required', 'integer', 'exists:regions,id']]);
+
+        $localities = Locality::query()
+            ->where('region_id', $data['region_id'])
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'municipality', 'category']);
+
+        return response()->json(['data' => $localities]);
     }
 }

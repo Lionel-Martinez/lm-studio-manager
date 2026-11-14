@@ -6,9 +6,9 @@ CRM privado para gestionar clientes, proyectos, pagos, comprobantes y notas de u
 - **Frontend:** Vue 3 + TypeScript, Pinia, Vue Router, Tailwind CSS 4, PrimeVue 4, Chart.js.
 
 ## Funciones
-Clientes (con ubicación, baja lógica y desactivación por motivo) · Proyectos con estados y fechas · Pagos con vencimientos · Comprobantes internos (sin validez fiscal) · Notas en Markdown · Resumen con datos reales · Reportes por período · Agenda de entregas, cobros y recordatorios · Exportación a CSV · Copias de seguridad · Login con verificación en dos pasos opcional.
+Clientes (con ubicación, baja lógica y desactivación por motivo) · Proyectos con estados y fechas · Pagos con vencimientos · Precio y plan de pago por proyecto (pago único, anticipo/saldo con % configurable, cuotas, cuota mensual con prueba y meses gratis) · Comprobantes internos (sin validez fiscal) · Notas en Markdown · Resumen con datos reales · Reportes por período · Agenda de entregas, cobros y recordatorios · Exportación a CSV · Copias de seguridad · Login con verificación en dos pasos opcional.
 
-Servicios (resumen por tipo) y Geografía (clientes e ingresos por país, provincia y departamento) ya tienen datos reales; las localidades siguen sin cargarse.
+Servicios (resumen por tipo) y Geografía (clientes e ingresos por país, provincia y departamento) ya tienen datos reales; las localidades se importan con `php artisan app:import-localities` (API Georef; opciones `--province=Salta`).
 
 ## Requisitos
 PHP 8.4 (con `pdo_mysql`; `sqlite3` para los tests) · Composer · Node 20+ · MySQL o MariaDB.

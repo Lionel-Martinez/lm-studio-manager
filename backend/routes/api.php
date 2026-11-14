@@ -12,6 +12,7 @@ use App\Http\Controllers\NoteController;
 use App\Http\Controllers\TwoFactorController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\ProjectPricingController;
 use App\Http\Controllers\ReceiptController;
 use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\ReportController;
@@ -49,6 +50,7 @@ Route::middleware('web')->group(function () {
             Route::get('payments', [ExportController::class, 'payments']);
         });
         Route::get('geo/countries', [GeoController::class, 'countries']);
+        Route::get('geo/localities', [GeoController::class, 'localities']);
         Route::get('geo/regions', [GeoController::class, 'regions']);
         Route::get('dashboard', DashboardController::class);
         Route::get('reports', ReportController::class);
@@ -63,6 +65,8 @@ Route::middleware('web')->group(function () {
         Route::get('receipts/{receipt}', [ReceiptController::class, 'show']);
         Route::post('receipts/{receipt}/void', [ReceiptController::class, 'void']);
         Route::apiResource('payments', PaymentController::class)->only(['index', 'store', 'update', 'destroy']);
+        Route::post('projects/{project}/pricing/preview', [ProjectPricingController::class, 'preview']);
+        Route::put('projects/{project}/pricing', [ProjectPricingController::class, 'update']);
         Route::apiResource('clients.projects', ProjectController::class)->shallow()->only(['store', 'update', 'destroy']);
     });
 });

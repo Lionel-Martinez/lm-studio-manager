@@ -39,23 +39,40 @@ interface GeoOption {
 const countries = ref<GeoOption[]>([])
 const provinces = ref<GeoOption[]>([])
 const departments = ref<GeoOption[]>([])
+const localities = ref<(GeoOption & { municipality: string | null })[]>([])
 
 async function loadRegions(countryId: number, parentId?: number): Promise<GeoOption[]> {
   const { data } = await api.get('/geo/regions', { params: { country_id: countryId, parent_id: parentId } })
   return data.data
 }
 
+async function loadLocalities(regionId: number) {
+  const { data } = await api.get('/geo/localities', { params: { region_id: regionId } })
+  return data.data
+}
+
+/** Al elegir otro departamento, la localidad anterior ya no corresponde. */
+async function onDepartmentChange(departmentId: number | null) {
+  form.locality_id = null
+  localities.value = []
+  if (departmentId) localities.value = await loadLocalities(departmentId)
+}
+
 async function onCountryChange(countryId: number | null) {
   form.province_id = null
   form.department_id = null
+  form.locality_id = null
   provinces.value = []
   departments.value = []
+  localities.value = []
   if (countryId) provinces.value = await loadRegions(countryId)
 }
 
 async function onProvinceChange(provinceId: number | null) {
   form.department_id = null
+  form.locality_id = null
   departments.value = []
+  localities.value = []
   if (provinceId && form.country_id) departments.value = await loadRegions(form.country_id, provinceId)
 }
 
@@ -77,6 +94,8 @@ async function setupLocation(client: Client | null) {
       if (client.province_id && client.province_id !== client.region_id) {
         departments.value = await loadRegions(countryId, client.province_id)
         form.department_id = client.region_id
+        localities.value = await loadLocalities(client.region_id)
+        form.locality_id = client.locality_id
       }
     }
   } catch {
@@ -89,6 +108,7 @@ function emptyForm() {
     country_id: null as number | null,
     province_id: null as number | null,
     department_id: null as number | null,
+    locality_id: null as number | null,
     commercial_status: 'new' as CommercialStatus,
     first_name: '',
     last_name: '',
@@ -170,6 +190,7 @@ function buildPayload(): NewClientPayload {
     commercial_status: isEditing.value ? form.commercial_status : undefined,
     country_id: form.country_id,
     region_id: form.department_id ?? form.province_id,
+    locality_id: form.department_id ? form.locality_id : null,
   }
 
   if (!isEditing.value && form.withProject && form.project.service_type) {
@@ -198,6 +219,7 @@ function withClearedFields(data: ClientDataPayload): ClientDataPayload {
     notes: data.notes ?? null,
     country_id: data.country_id ?? null,
     region_id: data.region_id ?? null,
+    locality_id: data.locality_id ?? null,
   }
 }
 
@@ -221,6 +243,7 @@ async function submit() {
 
   try {
     if (store.editing) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { project: _project, ...data } = buildPayload()
       await store.updateClient(store.editing.id, withClearedFields(data))
     } else {
@@ -295,7 +318,13 @@ async function submit() {
 
         <div class="sm:col-span-2">
           <FormField label="Departamento" for="client-department" hint="Se muestra después de elegir la provincia.">
-            <Select v-model="form.department_id" input-id="client-department" :options="departments" option-label="name" option-value="id" placeholder="Sin especificar" show-clear filter :disabled="departments.length === 0" fluid />
+            <Select v-model="form.department_id" input-id="client-department" :options="departments" option-label="name" option-value="id" placeholder="Sin especificar" show-clear filter :disabled="departments.length === 0" fluid @update:model-value="onDepartmentChange" />
+          </FormField>
+        </div>
+
+        <div v-if="localities.length > 0" class="sm:col-span-2">
+          <FormField label="Localidad" for="client-locality" :error="firstError('locality_id')" hint="Ciudades y pueblos del departamento (de Georef).">
+            <Select v-model="form.locality_id" input-id="client-locality" :options="localities" option-label="name" option-value="id" placeholder="Sin especificar" show-clear filter fluid />
           </FormField>
         </div>
 

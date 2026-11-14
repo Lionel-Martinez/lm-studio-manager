@@ -94,6 +94,6 @@ class Client extends Model
             return $this->country?->name;
         }
 
-        return collect([$this->region->name, $this->region->parent?->name])->filter()->implode(', ');
+        return collect([$this->locality?->name, $this->region->name, $this->region->parent?->name])->filter()->unique()->implode(', ');
     }
 }

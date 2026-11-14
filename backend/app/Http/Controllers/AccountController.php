@@ -97,6 +97,7 @@ class AccountController extends Controller
         'project.created' => 'Proyecto creado',
         'project.updated' => 'Proyecto modificado',
         'project.deleted' => 'Proyecto eliminado',
+        'project.pricing' => 'Precio y plan de pago del proyecto',
         'user.created' => 'Usuario creado',
     ];
 }

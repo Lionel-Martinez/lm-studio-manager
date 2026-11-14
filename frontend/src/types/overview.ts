@@ -16,6 +16,8 @@ export interface GeoNode {
   revenue: number
   country_id?: number
   province_id?: number
+  department_id?: number
+  municipality?: string | null
 }
 
 export interface GeographyOverview {
@@ -23,5 +25,6 @@ export interface GeographyOverview {
   countries: GeoNode[]
   provinces: GeoNode[]
   departments: GeoNode[]
+  localities: GeoNode[]
   unlocated: { clients: number; revenue: number }
 }

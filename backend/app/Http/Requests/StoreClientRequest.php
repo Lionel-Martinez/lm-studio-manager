@@ -51,7 +51,17 @@ class StoreClientRequest extends FormRequest
                     }
                 },
             ],
-            'locality_id' => ['nullable', 'integer', 'exists:localities,id'],
+            'locality_id' => [
+                'nullable',
+                'integer',
+                'exists:localities,id',
+                // La localidad tiene que pertenecer al departamento elegido.
+                function (string $attribute, mixed $value, \Closure $fail) {
+                    if ($value && ! \App\Models\Locality::whereKey($value)->where('region_id', $this->input('region_id'))->exists()) {
+                        $fail('La localidad no pertenece al departamento elegido.');
+                    }
+                },
+            ],
             'first_contact_at' => ['nullable', 'date'],
             'source' => ['nullable', 'string', 'max:255'],
             'client_type' => ['nullable', Rule::enum(ClientType::class)],

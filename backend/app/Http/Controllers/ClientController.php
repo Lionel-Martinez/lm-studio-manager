@@ -26,7 +26,7 @@ class ClientController extends Controller
         $status = $request->validate(['status' => ['nullable', Rule::enum(CommercialStatus::class)]])['status'] ?? null;
 
         $clients = Client::query()
-            ->with(['country', 'region.parent', 'projects' => fn ($query) => $query->orderBy('entry_date', 'desc')])
+            ->with(['country', 'region.parent', 'locality', 'projects' => fn ($query) => $query->orderBy('entry_date', 'desc')])
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($query) use ($search) {
                     $query->where('first_name', 'like', "%{$search}%")
@@ -75,14 +75,14 @@ class ClientController extends Controller
 
         AuditLog::record('client.created', $client, ['name' => $client->display_name]);
 
-        return ClientResource::make($client->load(['projects', 'country', 'region.parent']))
+        return ClientResource::make($client->load(['projects', 'country', 'region.parent', 'locality']))
             ->response()
             ->setStatusCode(201);
     }
 
     public function show(Client $client): ClientResource
     {
-        return ClientResource::make($client->load(['projects', 'country', 'region.parent']));
+        return ClientResource::make($client->load(['projects', 'country', 'region.parent', 'locality']));
     }
 
     public function update(UpdateClientRequest $request, Client $client): ClientResource
@@ -98,7 +98,7 @@ class ClientController extends Controller
 
         AuditLog::record('client.updated', $client, ['name' => $client->display_name]);
 
-        return ClientResource::make($client->refresh()->load(['projects', 'country', 'region.parent']));
+        return ClientResource::make($client->refresh()->load(['projects', 'country', 'region.parent', 'locality']));
     }
 
     /** Desactivar no borra nada: el cliente sigue en la lista, marcado como inactivo y con su motivo. */
@@ -115,7 +115,7 @@ class ClientController extends Controller
 
         AuditLog::record('client.deactivated', $client, ['name' => $client->display_name, 'reason' => $data['reason']]);
 
-        return ClientResource::make($client->refresh()->load(['projects', 'country', 'region.parent']));
+        return ClientResource::make($client->refresh()->load(['projects', 'country', 'region.parent', 'locality']));
     }
 
     public function reactivate(Client $client): ClientResource
@@ -129,7 +129,7 @@ class ClientController extends Controller
 
         AuditLog::record('client.reactivated', $client, ['name' => $client->display_name]);
 
-        return ClientResource::make($client->refresh()->load(['projects', 'country', 'region.parent']));
+        return ClientResource::make($client->refresh()->load(['projects', 'country', 'region.parent', 'locality']));
     }
 
     /** Baja lógica: el cliente deja de verse pero su historial se conserva y se puede recuperar. */

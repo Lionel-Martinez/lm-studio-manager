@@ -11,6 +11,8 @@ class Locality extends Model
     protected $fillable = [
         'region_id',
         'name',
+        'municipality',
+        'category',
         'georef_id',
         'postal_code',
         'is_active',
