@@ -8,7 +8,7 @@ CRM privado para gestionar clientes, proyectos, pagos, comprobantes y notas de u
 ## Funciones
 Clientes (con ubicación, baja lógica y desactivación por motivo) · Proyectos con estados y fechas · Pagos con vencimientos · Comprobantes internos (sin validez fiscal) · Notas en Markdown · Resumen con datos reales · Reportes por período · Agenda de entregas, cobros y recordatorios · Exportación a CSV · Copias de seguridad · Login con verificación en dos pasos opcional.
 
-Pantallas todavía sin construir: **Servicios** y **Geografía** (muestran un aviso de "próximamente").
+Servicios (resumen por tipo) y Geografía (clientes e ingresos por país, provincia y departamento) ya tienen datos reales; las localidades siguen sin cargarse.
 
 ## Requisitos
 PHP 8.4 (con `pdo_mysql`; `sqlite3` para los tests) · Composer · Node 20+ · MySQL o MariaDB.

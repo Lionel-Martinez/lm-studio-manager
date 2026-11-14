@@ -1,19 +1,39 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import GeographyBreadcrumb from '@/components/geography/GeographyBreadcrumb.vue'
 import GeographyStatCard from '@/components/geography/GeographyStatCard.vue'
 import GeographyRanking, {
   type GeographyRankingItem,
 } from '@/components/geography/GeographyRanking.vue'
+import { api } from '@/lib/api'
+import type { GeographyOverview, GeoNode } from '@/types/overview'
+import { formatCurrency } from '@/utils/dates'
 
-// Ubicación seleccionada durante la navegación.
+// Ubicación seleccionada durante la navegación (país → provincia → departamento).
 const selectedCountry = ref<GeographyRankingItem | null>(null)
 const selectedRegion = ref<GeographyRankingItem | null>(null)
 
-// Estos arreglos recibirán los datos de Laravel más adelante.
-const countries = ref<GeographyRankingItem[]>([])
-const regions = ref<GeographyRankingItem[]>([])
-const localities = ref<GeographyRankingItem[]>([])
+const overview = ref<GeographyOverview | null>(null)
+const error = ref('')
+
+onMounted(async () => {
+  try {
+    const { data } = await api.get('/geography')
+    overview.value = data.data
+  } catch {
+    error.value = 'No se pudo cargar la geografía de clientes. Verificá que el backend esté en marcha.'
+  }
+})
+
+/** Convierte los nodos al formato del ranking; el porcentaje es la parte de clientes dentro del nivel. */
+function toItems(nodes: GeoNode[]): GeographyRankingItem[] {
+  const total = nodes.reduce((sum, n) => sum + n.clients, 0)
+  return nodes.map((n) => ({ id: n.id, name: n.name, clients: n.clients, revenue: n.revenue, percentage: total ? (n.clients / total) * 100 : 0 }))
+}
+
+const countries = computed(() => toItems(overview.value?.countries ?? []))
+const regions = computed(() => toItems((overview.value?.provinces ?? []).filter((p) => p.country_id === selectedCountry.value?.id)))
+const localities = computed(() => toItems((overview.value?.departments ?? []).filter((d) => d.province_id === selectedRegion.value?.id)))
 
 // Determina el nivel geográfico actual.
 const currentLevel = computed(() => {
@@ -60,25 +80,33 @@ const rankingTitle = computed(() => {
     case 'countries':
       return 'Ranking de países'
     case 'regions':
-      return `Regiones de ${selectedCountry.value?.name ?? ''}`
+      return `Provincias de ${selectedCountry.value?.name ?? ''}`
     default:
-      return `Localidades de ${selectedRegion.value?.name ?? ''}`
+      return `Departamentos de ${selectedRegion.value?.name ?? ''}`
   }
 })
 
 // Indicadores del nivel actual.
-const stats = computed(() => [
-  {
-    title: 'Ubicaciones',
-    value: '—',
-    description: 'Se calculará con los datos registrados.',
-  },
-  {
-    title: 'Clientes',
-    value: '—',
-    description: 'Clientes asociados a esta selección.',
-  },
-])
+const stats = computed(() => {
+  const items = currentItems.value
+  const unlocated = overview.value?.unlocated
+
+  return [
+    {
+      title: 'Ubicaciones',
+      value: items.length,
+      description: 'Con al menos un cliente en este nivel.',
+    },
+    {
+      title: 'Clientes',
+      value: items.reduce((sum, i) => sum + i.clients, 0),
+      description:
+        currentLevel.value === 'countries' && unlocated?.clients
+          ? `Más ${unlocated.clients} sin ubicación (${formatCurrency(unlocated.revenue)} cobrados).`
+          : 'Clientes asociados a esta selección.',
+    },
+  ]
+})
 
 // Al seleccionar un país o región, avanzamos un nivel.
 function handleSelect(item: GeographyRankingItem) {
@@ -103,6 +131,7 @@ function navigateTo(index: number) {
 
 <template>
   <div class="space-y-10">
+    <p v-if="error" class="border-l-2 border-app-danger bg-app-accent-soft px-3 py-2 text-sm text-app-danger" role="alert">{{ error }}</p>
     <GeographyBreadcrumb :items="breadcrumbItems" @navigate="navigateTo" />
 
     <dl class="grid grid-cols-1 gap-px border-y border-app-border bg-app-border sm:grid-cols-2">
