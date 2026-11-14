@@ -23,8 +23,11 @@ php artisan key:generate
 php artisan migrate
 php artisan db:seed           # países, provincias y departamentos
 php artisan app:create-user tu@correo.com --name="Tu nombre"
+php artisan app:import-localities --province=Salta   # localidades (opcional, API Georef)
+php artisan app:seed-demo     # 8 clientes de prueba con proyectos, pagos, notas y recordatorios (opcional)
 php artisan serve             # http://127.0.0.1:8000
 ```
+> Los datos de prueba están marcados como «demo». Para quitarlos: `php artisan app:seed-demo --remove` (solo borra lo de prueba). En producción pide `--force`.
 > Guardá una copia de tu `.env` (sobre todo `APP_KEY`): con la clave perdida las sesiones y el secreto de la verificación en dos pasos no se pueden leer.
 
 ### Frontend (`frontend/`)

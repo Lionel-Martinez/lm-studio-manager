@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Enums\PaymentMode;
 use App\Enums\TrialUnit;
+use App\Models\Payment;
 use App\Models\Project;
 use Illuminate\Support\Carbon;
 
@@ -45,6 +46,24 @@ class PaymentPlan
         }
 
         return $rows;
+    }
+
+    /**
+     * Crea los pagos pendientes de un calendario (ver `schedule`).
+     *
+     * @param  list<array{item: string, concept: string, due_date: string, amount: float}>  $schedule
+     * @return list<Payment>
+     */
+    public static function createPayments(Project $project, array $schedule): array
+    {
+        return array_map(fn (array $row) => Payment::create([
+            'client_id' => $project->client_id,
+            'project_id' => $project->id,
+            'plan_item' => $row['item'],
+            'concept' => mb_substr($row['concept'].' — '.($project->name ?: $project->service_type->label()), 0, 150),
+            'amount' => $row['amount'],
+            'due_date' => $row['due_date'],
+        ]), $schedule);
     }
 
     /** Fecha del primer cobro mensual: inicio + período de prueba + meses gratis. */

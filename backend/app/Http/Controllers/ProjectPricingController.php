@@ -52,16 +52,7 @@ class ProjectPricingController extends Controller
             // Solo se reemplazan los pagos pendientes que había creado un plan anterior.
             $existing->delete();
 
-            foreach ($schedule as $row) {
-                Payment::create([
-                    'client_id' => $project->client_id,
-                    'project_id' => $project->id,
-                    'plan_item' => $row['item'],
-                    'concept' => mb_substr($row['concept'].' — '.($project->name ?: $project->service_type->label()), 0, 150),
-                    'amount' => $row['amount'],
-                    'due_date' => $row['due_date'],
-                ]);
-            }
+            PaymentPlan::createPayments($project, $schedule);
 
             return count($schedule);
         });

@@ -87,6 +87,15 @@ const router = createRouter({
           },
         },
         {
+          path: 'ayuda',
+          name: 'ayuda',
+          component: () => import('@/views/HelpView.vue'),
+          meta: {
+            title: 'Ayuda',
+            description: 'Guía para entender y usar todo el sistema.',
+          },
+        },
+        {
           path: 'cuenta',
           name: 'cuenta',
           component: () => import('@/views/AccountView.vue'),
