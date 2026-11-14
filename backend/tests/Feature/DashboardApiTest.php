@@ -75,4 +75,19 @@ class DashboardApiTest extends TestCase
 
         $this->getJson('/api/dashboard')->assertJsonPath('data.distribution.0', ['label' => 'Orán', 'value' => 2]);
     }
+
+    public function test_los_cobros_de_un_cliente_eliminado_siguen_contando(): void
+    {
+        $this->actingAs(User::factory()->create());
+
+        $ana = Client::create(['first_name' => 'Ana', 'last_name' => 'Ruiz'])->refresh();
+        Payment::create(['client_id' => $ana->id, 'concept' => 'Cuota', 'amount' => 2000, 'due_date' => today()->subDays(2)]);
+        $ana->delete();
+
+        $this->getJson('/api/dashboard')->assertOk()
+            ->assertJsonPath('data.kpis.overdue_count', 1)
+            ->assertJsonPath('data.kpis.overdue_amount', 2000)
+            ->assertJsonCount(1, 'data.payments')
+            ->assertJsonPath('data.payments.0.client', 'Ana Ruiz');
+    }
 }

@@ -42,7 +42,8 @@ async function openReceipt(payment: Payment) {
   actionError.value = ''
   try {
     let id = payment.receipt_id
-    if (!id) {
+    // Con el comprobante anulado se emite uno nuevo (el anulado queda en el historial).
+    if (!id || payment.receipt_voided) {
       const { data } = await api.post(`/payments/${payment.id}/receipt`)
       id = data.data.id as number
       await store.fetchPayments(1)
@@ -156,7 +157,7 @@ const statusClass = (status: PaymentStatus) =>
             <td class="whitespace-nowrap py-3 text-right text-xs">
               <button v-if="payment.status !== 'paid'" type="button" class="mr-3 cursor-pointer underline underline-offset-4 hover:text-app-accent" @click="markPaid(payment)">Marcar cobrado</button>
               <button v-if="payment.status === 'paid'" type="button" class="mr-3 cursor-pointer underline underline-offset-4 hover:text-app-accent" @click="openReceipt(payment)">
-                {{ payment.receipt_code ? `Comprobante ${payment.receipt_code}${payment.receipt_voided ? ' (anulado)' : ''}` : 'Emitir comprobante' }}
+                {{ payment.receipt_code && !payment.receipt_voided ? `Comprobante ${payment.receipt_code}` : payment.receipt_voided ? `${payment.receipt_code} anulado · emitir nuevo` : 'Emitir comprobante' }}
               </button>
               <button type="button" class="cursor-pointer underline underline-offset-4 hover:text-app-accent" @click="store.openDialog(payment)">Editar</button>
               <button type="button" class="ml-3 cursor-pointer text-app-muted underline underline-offset-4 hover:text-app-danger" @click="toDelete = payment">Eliminar</button>

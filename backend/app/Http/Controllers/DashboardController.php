@@ -18,7 +18,7 @@ class DashboardController extends Controller
         $working = [ProjectStatus::InProgress->value, ProjectStatus::Ready->value];
         $waiting = [ProjectStatus::Prospect->value, ProjectStatus::Waiting->value];
 
-        // Proyectos sin entregar, con su cliente (los clientes eliminados no aparecen).
+        // Proyectos sin entregar, con su cliente (los clientes eliminados no aparecen). Los cobros sí cuentan siempre.
         $projects = Project::query()
             ->with('client')
             ->whereHas('client')
@@ -27,10 +27,10 @@ class DashboardController extends Controller
             ->orderBy('due_date')
             ->get();
 
-        $unpaid = Payment::query()->with('client')->whereHas('client')->whereNull('paid_at');
+        $unpaid = Payment::query()->with('client')->whereNull('paid_at');
 
         $upcoming = (clone $unpaid)->orderBy('due_date')->limit(10)->get();
-        $overdue = Payment::withStatus('overdue')->whereHas('client');
+        $overdue = Payment::withStatus('overdue');
 
         return response()->json(['data' => [
             'kpis' => [

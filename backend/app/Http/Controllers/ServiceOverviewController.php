@@ -16,7 +16,7 @@ class ServiceOverviewController extends Controller
         // Solo proyectos de clientes que no fueron eliminados.
         $projects = Project::query()->whereHas('client')->get()->groupBy(fn (Project $p) => $p->service_type->value);
 
-        $payments = Payment::query()->whereHas('client')->whereNotNull('project_id')->with('project')->get()
+        $payments = Payment::query()->whereNotNull('project_id')->with('project')->get()
             ->filter(fn (Payment $p) => $p->project !== null)
             ->groupBy(fn (Payment $p) => $p->project->service_type->value);
 

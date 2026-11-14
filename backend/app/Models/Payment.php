@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -33,9 +34,16 @@ class Payment extends Model
         return $this->belongsTo(Project::class)->withTrashed();
     }
 
+    /** El comprobante más reciente (vigente, o el último anulado si no hay otro). */
     public function receipt(): HasOne
     {
-        return $this->hasOne(Receipt::class);
+        return $this->hasOne(Receipt::class)->latestOfMany('number');
+    }
+
+    /** Historial completo: anulados y vigente. */
+    public function receipts(): HasMany
+    {
+        return $this->hasMany(Receipt::class);
     }
 
     /** Tiene un comprobante emitido y no anulado. */

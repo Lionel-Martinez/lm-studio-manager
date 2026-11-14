@@ -8,7 +8,7 @@
 - **Sesión nueva al entrar y destruida al salir**; vence tras 60 min sin actividad; el contenido de la sesión se guarda cifrado.
 - **Verificación en dos pasos (TOTP, opcional):** se activa en *Cuenta* con una app como Google Authenticator, Authy o 1Password. Con ella activa, la contraseña sola no inicia sesión: pide un código de 6 dígitos (5 intentos y se bloquea; un mismo código no sirve dos veces). Incluye 8 códigos de recuperación de un solo uso (guardados con hash). Activar, renovar códigos y desactivar piden la contraseña. El secreto se guarda cifrado con `APP_KEY`: si cambiás `APP_KEY`, las cuentas con dos pasos quedan bloqueadas (hay que desactivarlo desde la base o con tinker).
 - **Cambio de contraseña** exige la actual y cierra las demás sesiones.
-- **Registro de actividad** (`audit_logs`): accesos, fallos, bloqueos, cambios de contraseña, alta/edición/baja de clientes. Se ve en *Cuenta*.
+- **Registro de actividad** (`audit_logs`): accesos, fallos, bloqueos, cambios de contraseña, alta/edición/baja de clientes. Se ve en *Cuenta*. Se conservan `AUDIT_LOG_RETENTION_MONTHS` meses (12 por defecto); `app:prune-audit-logs` borra lo anterior una vez por día, y también se puede correr a mano.
 - **Cabeceras:** `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, HSTS (por HTTPS), `Cache-Control: no-store` en la API.
 - **Validación** de todo dato entrante (FormRequests) y **baja lógica** de clientes (recuperable).
 
@@ -33,7 +33,7 @@
 
 ## Comprobantes de pago
 - Son **internos: no son facturas ni tienen validez fiscal** (así lo dice el propio documento). Se emiten desde un pago cobrado, con número correlativo `C-000001`.
-- Guardan una copia de los datos al emitirse; con un comprobante vigente no se puede cambiar el importe, concepto, fecha o medio de pago, ni eliminar el pago: hay que anularlo (el número anulado no se reutiliza).
+- Guardan una copia de los datos al emitirse; con un comprobante vigente no se puede cambiar el importe, concepto, fecha o medio de pago, ni eliminar el pago: hay que anularlo (el número anulado no se reutiliza). Después de anular se puede emitir uno nuevo, con el número siguiente; el anulado queda en el historial.
 - El encabezado sale de `.env`: `BUSINESS_NAME`, `BUSINESS_TAX_ID`, `BUSINESS_ADDRESS`, `BUSINESS_CONTACT`.
 
 ## Pendiente / ideas

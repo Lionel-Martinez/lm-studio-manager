@@ -15,49 +15,58 @@ use Illuminate\Validation\ValidationException;
  */
 class ReceiptController extends Controller
 {
-    /** Emite el comprobante de un pago cobrado (si ya tiene uno, lo devuelve). */
+    /**
+     * Emite el comprobante de un pago cobrado. Si ya tiene uno vigente lo devuelve;
+     * si el último fue anulado, emite uno nuevo con el número siguiente.
+     */
     public function store(Payment $payment): JsonResponse
     {
         if ($payment->paid_at === null) {
             throw ValidationException::withMessages(['payment' => 'Solo se puede emitir comprobante de un pago cobrado.']);
         }
 
-        $existing = $payment->receipt;
-        if ($existing) {
-            return $this->show($existing);
-        }
-
-        $payment->load(['client', 'project']);
-
         // El número es correlativo; si dos pedidos chocan, el índice único lo detecta y se reintenta.
-        $receipt = null;
-        for ($attempt = 0; $attempt < 3 && ! $receipt; $attempt++) {
+        $result = null;
+        for ($attempt = 0; $attempt < 3 && ! $result; $attempt++) {
             try {
-                $receipt = DB::transaction(fn () => Receipt::create([
-                    'payment_id' => $payment->id,
-                    'number' => (int) Receipt::max('number') + 1,
-                    'client_name' => $payment->client->display_name,
-                    'client_tax_id' => $payment->client->tax_id,
-                    'concept' => $payment->concept,
-                    'project_name' => $payment->project ? ($payment->project->name ?: $payment->project->service_type->label()) : null,
-                    'amount' => $payment->amount,
-                    'paid_at' => $payment->paid_at,
-                    'method' => $payment->method,
-                    'issued_at' => now(),
-                ]));
+                $result = DB::transaction(function () use ($payment) {
+                    // Se bloquea el pago para que dos pedidos simultáneos no emitan dos comprobantes vigentes.
+                    $locked = Payment::query()->lockForUpdate()->findOrFail($payment->id);
+
+                    $active = $locked->receipts()->whereNull('voided_at')->first();
+                    if ($active) {
+                        return [$active, false];
+                    }
+
+                    $locked->load(['client', 'project']);
+
+                    return [Receipt::create([
+                        'payment_id' => $locked->id,
+                        'number' => (int) Receipt::max('number') + 1,
+                        'client_name' => $locked->client->display_name,
+                        'client_tax_id' => $locked->client->tax_id,
+                        'concept' => $locked->concept,
+                        'project_name' => $locked->project ? ($locked->project->name ?: $locked->project->service_type->label()) : null,
+                        'amount' => $locked->amount,
+                        'paid_at' => $locked->paid_at,
+                        'method' => $locked->method,
+                        'issued_at' => now(),
+                    ]), true];
+                });
             } catch (UniqueConstraintViolationException $e) {
-                // Si el choque fue por el pago (otro pedido lo emitió primero), se devuelve ese.
-                if ($existing = Receipt::where('payment_id', $payment->id)->first()) {
-                    return $this->show($existing);
-                }
+                // Chocó el número con otro pedido: se reintenta.
             }
         }
 
-        abort_unless($receipt, 503, 'No se pudo emitir el comprobante. Intentá de nuevo.');
+        abort_unless($result, 503, 'No se pudo emitir el comprobante. Intentá de nuevo.');
 
-        AuditLog::record('receipt.issued', $receipt, ['code' => $receipt->code, 'payment_id' => $payment->id]);
+        [$receipt, $created] = $result;
 
-        return $this->show($receipt, 201);
+        if ($created) {
+            AuditLog::record('receipt.issued', $receipt, ['code' => $receipt->code, 'payment_id' => $payment->id]);
+        }
+
+        return $this->show($receipt, $created ? 201 : 200);
     }
 
     public function show(Receipt $receipt, int $status = 200): JsonResponse

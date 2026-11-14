@@ -112,6 +112,27 @@ class ReceiptApiTest extends TestCase
         $this->assertDatabaseHas('audit_logs', ['event' => 'receipt.voided']);
     }
 
+    public function test_despues_de_anular_se_emite_uno_nuevo_con_otro_numero(): void
+    {
+        $payment = $this->payment();
+        $first = $this->postJson("/api/payments/{$payment->id}/receipt")->assertCreated()->json('data');
+        $this->postJson("/api/receipts/{$first['id']}/void")->assertOk();
+
+        $second = $this->postJson("/api/payments/{$payment->id}/receipt")->assertCreated()->json('data');
+
+        $this->assertNotSame($first['id'], $second['id']);
+        $this->assertNotSame($first['code'], $second['code']);
+        $this->assertNull($second['voided_at']);
+        $this->assertSame(2, $payment->receipts()->count());
+
+        // Con uno vigente, volver a pedir devuelve ese mismo.
+        $this->postJson("/api/payments/{$payment->id}/receipt")->assertOk()->assertJsonPath('data.id', $second['id']);
+        $this->assertSame(2, $payment->receipts()->count());
+
+        // El pago queda bloqueado de nuevo por el comprobante vigente.
+        $this->deleteJson("/api/payments/{$payment->id}")->assertUnprocessable();
+    }
+
     public function test_exige_sesion(): void
     {
         $payment = $this->payment();
