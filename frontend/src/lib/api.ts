@@ -3,12 +3,16 @@ import axios, { isAxiosError } from 'axios'
 /**
  * Cliente HTTP único de la aplicación.
  * En desarrollo, Vite redirige /api al backend de Laravel (ver vite.config.ts).
+ * En producción el frontend puede estar en otro subdominio: se configura con VITE_API_URL.
  *
  * La sesión viaja en una cookie HttpOnly (el navegador la envía sola) y axios
  * copia la cookie XSRF-TOKEN al encabezado X-XSRF-TOKEN: protección CSRF de Laravel.
  */
+const apiOrigin = (import.meta.env.VITE_API_URL ?? '').replace(/\/+$/, '')
+
 export const api = axios.create({
-  baseURL: '/api',
+  // Vacío = mismo origen (desarrollo con proxy de Vite). En producción: https://api.tudominio.com.ar
+  baseURL: `${apiOrigin}/api`,
   headers: { Accept: 'application/json' },
   withCredentials: true,
   withXSRFToken: true,

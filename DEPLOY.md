@@ -133,3 +133,56 @@ Para que `deploy.sh` pueda recargar PHP sin pedir contraseña: `# echo 'deploy A
 | Al recargar `/clientes` da 404 | Falta el bloque `location /` con `try_files` en Nginx. |
 | Los códigos 2FA no andan | Reloj del servidor desfasado: `timedatectl set-ntp true`. |
 | `app:backup` falla | `mariadb-client` no instalado o `BACKUP_MYSQLDUMP_PATH` incorrecto. |
+
+---
+
+# Variante: frontend en Cloudflare Pages + API en un subdominio
+
+Resultado: `https://app.tudominio.com.ar` (Cloudflare Pages) y `https://api.tudominio.com.ar` (tu VPS). Es **menos simple** que la opción de arriba (un solo dominio): hay CORS, una cookie compartida entre subdominios y una política CSP. Funciona porque ambos son del mismo dominio registrable (`tudominio.com.ar`), así que el navegador los considera *same-site*. **Los dos tienen que colgar del mismo dominio**: con dominios distintos las cookies de sesión no funcionan.
+
+## A. Backend (API)
+Seguí los pasos 0 a 5, 8 y 9 de arriba, con estas diferencias:
+
+1. **DNS:** registro **A** `api` → IP del VPS.
+2. **Nginx:** en vez de `nginx.conf.example`, usá `deploy/nginx-api.conf.example` (solo sirve la API) y `certbot --nginx -d api.tudominio.com.ar --redirect`. No hace falta `frontend/dist` en el servidor.
+3. **`backend/.env`:** partí de `deploy/env.production.example` y cambiá estas variables:
+```
+APP_URL=https://api.tudominio.com.ar
+SESSION_DOMAIN=.tudominio.com.ar       # con el punto inicial; es el dominio registrado, no ".com.ar"
+SESSION_SECURE_COOKIE=true
+SESSION_SAME_SITE=lax
+CORS_ALLOWED_ORIGINS=https://app.tudominio.com.ar     # origen exacto, sin barra final
+```
+Después `php artisan config:cache`. (`SESSION_DOMAIN` con punto es lo que permite que el frontend lea la cookie `XSRF-TOKEN`; sin eso el login da `419`.)
+
+## B. Frontend (Cloudflare Pages)
+1. Cloudflare → *Workers & Pages* → *Create* → *Pages* → conectar el repo de GitHub.
+2. Configuración de compilación:
+   - *Root directory:* `frontend`
+   - *Build command:* `npm run build:pages`
+   - *Build output directory:* `dist`
+3. *Environment variables* (producción):
+   - `VITE_API_URL` = `https://api.tudominio.com.ar` (sin barra final). **Obligatoria**: si falta, la compilación falla a propósito.
+   - `NODE_VERSION` = `22.18.0`
+4. Cuando termine el primer despliegue: *Custom domains* → `app.tudominio.com.ar`.
+
+`npm run build:pages` compila y genera `dist/_headers` con las cabeceras de seguridad y una CSP que solo permite hablar con tu API; `public/_redirects` hace que recargar `/clientes` no dé 404.
+
+## C. Verificación extra
+1. Entrá a `https://app.tudominio.com.ar`: debe cargar el login sin errores rojos en la consola del navegador.
+2. Iniciá sesión. En DevTools → *Application → Cookies → api.tudominio.com.ar* tienen que estar `XSRF-TOKEN` y la cookie de sesión, ambas con `Domain=.tudominio.com.ar` y `Secure`.
+3. Desde otro dominio cualquiera no debe poder usarse la API con tu sesión (lo cubre el test `CorsTest`).
+4. Después de cambiar el dominio de la API, volvé a compilar el frontend: la dirección queda dentro del código.
+
+## D. Actualizar
+- **Frontend:** `git push` a `main` y Cloudflare Pages lo compila y publica solo.
+- **Backend:** en el servidor, `./deploy/deploy.sh`.
+
+## Problemas típicos de esta variante
+| Síntoma | Causa probable |
+|---|---|
+| En la consola: *blocked by CORS policy* | `CORS_ALLOWED_ORIGINS` no coincide exactamente con `https://app…` (sin barra final), o falta `config:cache`. |
+| El login da `419` | `SESSION_DOMAIN` sin el punto inicial o vacío: el frontend no puede leer `XSRF-TOKEN`. |
+| Entra y se desloguea al instante | La cookie no se guarda: revisá `SESSION_SECURE_COOKIE=true`, `SESSION_DOMAIN` y que ambos subdominios usen HTTPS. |
+| *Refused to connect* / CSP en la consola | `VITE_API_URL` incorrecta al compilar; corregila en Pages y volvé a desplegar. |
+| La compilación falla con "Falta la variable VITE_API_URL" | No la cargaste en *Environment variables* de Pages. |

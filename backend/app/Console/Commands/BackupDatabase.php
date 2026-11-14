@@ -15,11 +15,11 @@ class BackupDatabase extends Command
 
     public function handle(): int
     {
-        $keep = (int) ($this->option('keep') ?: env('BACKUP_KEEP', 14));
+        $keep = (int) ($this->option('keep') ?: config('backup.keep'));
 
         $backup = new DatabaseBackup(
             storage_path('app/private/backups'),
-            (string) env('BACKUP_MYSQLDUMP_PATH', 'mysqldump'),
+            (string) config('backup.mysqldump_path'),
         );
 
         try {
