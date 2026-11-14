@@ -32,7 +32,12 @@ class BackupDatabase extends Command
 
         $deleted = $backup->prune($keep);
 
-        AuditLog::record('backup.created', null, ['file' => basename($file), 'pruned' => $deleted]);
+        // Anotar la actividad es secundario: si falla (p. ej. falta migrar), la copia ya está hecha.
+        try {
+            AuditLog::record('backup.created', null, ['file' => basename($file), 'pruned' => $deleted]);
+        } catch (Throwable $e) {
+            $this->warn('La copia se hizo, pero no se pudo anotar en la actividad: '.$e->getMessage());
+        }
 
         $this->info('Copia creada: '.$file);
         if ($deleted > 0) {
