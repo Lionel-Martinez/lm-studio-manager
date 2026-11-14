@@ -6,7 +6,7 @@ CRM privado para gestionar clientes, proyectos, pagos, comprobantes y notas de u
 - **Frontend:** Vue 3 + TypeScript, Pinia, Vue Router, Tailwind CSS 4, PrimeVue 4, Chart.js.
 
 ## Funciones
-Clientes (con ubicación y baja lógica) · Proyectos con estados y fechas · Pagos con vencimientos · Comprobantes internos (sin validez fiscal) · Notas en Markdown · Resumen con datos reales · Reportes por período · Exportación a CSV · Copias de seguridad · Login con verificación en dos pasos opcional.
+Clientes (con ubicación y baja lógica) · Proyectos con estados y fechas · Pagos con vencimientos · Comprobantes internos (sin validez fiscal) · Notas en Markdown · Resumen con datos reales · Reportes por período · Agenda de entregas, cobros y recordatorios · Exportación a CSV · Copias de seguridad · Login con verificación en dos pasos opcional.
 
 Pantallas todavía sin construir: **Servicios** y **Geografía** (muestran un aviso de "próximamente").
 

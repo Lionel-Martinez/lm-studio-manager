@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AccountController;
+use App\Http\Controllers\AgendaController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\DashboardController;
@@ -11,6 +12,7 @@ use App\Http\Controllers\TwoFactorController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ReceiptController;
+use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\ReportController;
 use Illuminate\Support\Facades\Route;
 
@@ -46,6 +48,9 @@ Route::middleware('web')->group(function () {
         Route::get('geo/regions', [GeoController::class, 'regions']);
         Route::get('dashboard', DashboardController::class);
         Route::get('reports', ReportController::class);
+        Route::get('agenda', [AgendaController::class, 'index']);
+        Route::get('agenda/summary', [AgendaController::class, 'summary']);
+        Route::apiResource('reminders', ReminderController::class)->only(['store', 'update', 'destroy']);
         Route::get('payments/summary', [PaymentController::class, 'summary']);
         Route::apiResource('notes', NoteController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::post('payments/{payment}/receipt', [ReceiptController::class, 'store']);

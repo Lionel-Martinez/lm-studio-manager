@@ -1,12 +1,15 @@
 <script setup lang="ts">
+import { onMounted } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 
 import { useTheme } from '@/composables/useTheme'
+import { useAgendaStore } from '@/stores/agenda'
 import { useAuthStore } from '@/stores/auth'
 
 const navigation = [
   { name: 'Resumen', path: '/' },
   { name: 'Clientes', path: '/clientes' },
+  { name: 'Agenda', path: '/agenda' },
   { name: 'Servicios', path: '/servicios' },
   { name: 'Pagos', path: '/pagos' },
   { name: 'Reportes', path: '/reportes' },
@@ -22,6 +25,8 @@ const linkIdle = 'border-transparent text-app-muted hover:text-app-text'
 
 const { isDark, setTheme } = useTheme()
 const auth = useAuthStore()
+const agenda = useAgendaStore()
+onMounted(() => agenda.fetchSummary())
 const router = useRouter()
 
 async function logout() {
@@ -58,6 +63,12 @@ async function logout() {
           @click="navigate"
         >
           {{ item.name }}
+          <span
+            v-if="item.path === '/agenda' && agenda.summary.overdue + agenda.summary.today > 0"
+            class="ml-1.5 text-xs tabular-nums"
+            :class="agenda.summary.overdue > 0 ? 'text-app-danger' : 'text-app-muted'"
+            :aria-label="`${agenda.summary.overdue} atrasados, ${agenda.summary.today} para hoy`"
+          >({{ agenda.summary.overdue + agenda.summary.today }})</span>
         </a>
       </RouterLink>
     </nav>

@@ -51,6 +51,15 @@ const router = createRouter({
           },
         },
         {
+          path: 'agenda',
+          name: 'agenda',
+          component: () => import('@/views/AgendaView.vue'),
+          meta: {
+            title: 'Agenda',
+            description: 'Entregas, cobros y recordatorios por fecha.',
+          },
+        },
+        {
           path: 'pagos',
           name: 'pagos',
           component: () => import('@/views/PaymentsView.vue'),
