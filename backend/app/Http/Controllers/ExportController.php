@@ -45,7 +45,8 @@ class ExportController extends Controller
     {
         AuditLog::record('export.projects');
 
-        $rows = Project::query()->with('client')->orderBy('id')->lazyById(200)->map(fn (Project $p) => [
+        // Los proyectos de clientes eliminados también se exportan, con su nombre.
+        $rows = Project::query()->with(['client' => fn ($q) => $q->withTrashed()])->orderBy('id')->lazyById(200)->map(fn (Project $p) => [
             $p->id,
             $p->client?->display_name,
             $p->service_type->label(),

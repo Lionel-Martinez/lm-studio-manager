@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use App\Support\Totp;
 use Illuminate\Support\Str;
@@ -16,6 +17,9 @@ use Illuminate\Validation\ValidationException;
 class AuthController extends Controller
 {
     private const MAX_ATTEMPTS = 5;
+
+    /** Hash de relleno (bcrypt, costo 12) para que un correo inexistente tarde lo mismo que uno real. */
+    private const DUMMY_HASH = '$2y$12$mtiknmxcDolCbhE4.pkTKubiunpmi6yZhv5vw0ZO5xLGlsDzKLht6';
 
     private const PENDING_KEY = 'two_factor.pending';
 
@@ -39,8 +43,10 @@ class AuthController extends Controller
 
         $user = User::where('email', $email)->first();
 
-        // Se valida la contraseña siempre (aunque el correo no exista) para no revelar cuentas por tiempo de respuesta.
-        $valid = Auth::validate(['email' => $email, 'password' => $credentials['password']]);
+        // Siempre se calcula un hash (contra uno de relleno si el correo no existe)
+        // para no revelar qué cuentas existen por el tiempo de respuesta.
+        $matches = Hash::check($credentials['password'], $user?->password ?? self::DUMMY_HASH);
+        $valid = $user !== null && $matches;
 
         if (! $user || ! $valid) {
             RateLimiter::hit($throttleKey, 15 * 60);

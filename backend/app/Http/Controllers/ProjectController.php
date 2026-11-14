@@ -33,7 +33,7 @@ class ProjectController extends Controller
     public function update(UpdateProjectRequest $request, Project $project): ProjectResource
     {
         $project->update($request->validated());
-        $project->client->markActiveIfWorking();
+        $project->client?->markActiveIfWorking();
 
         AuditLog::record('project.updated', $project, ['client_id' => $project->client_id, 'status' => $project->status->value]);
 
