@@ -123,4 +123,17 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Proxies de confianza
+    |--------------------------------------------------------------------------
+    |
+    | Solo hace falta si hay un proxy delante de Nginx (por ejemplo Cloudflare con
+    | la nube naranja). Lista de IP separadas por coma, o "*" si el servidor solo
+    | acepta tráfico de ese proxy. Vacío = no se confía en ninguno.
+    |
+    */
+
+    'trusted_proxies' => env('TRUSTED_PROXIES'),
+
 ];

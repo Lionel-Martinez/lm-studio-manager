@@ -46,7 +46,7 @@ npm run type-check && npx oxlint src && npm run build-only
 ```
 
 ## Copias de seguridad
-`php artisan app:backup` (también programada a las 03:00). Detalles, restauración y cron en [SECURITY.md](SECURITY.md).
+`php artisan app:backup` (también programada a las 03:00). Detalles, restauración y cron en [SECURITY.md](SECURITY.md). Para publicarlo en un servidor: [DEPLOY.md](DEPLOY.md).
 
 ## Seguridad
 Ver [SECURITY.md](SECURITY.md): qué protege la aplicación y la lista de verificación antes de publicar en internet.

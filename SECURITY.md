@@ -20,7 +20,9 @@
 5. `.env` fuera del directorio público y nunca en Git. Generar `APP_KEY` propia (`php artisan key:generate`).
 6. **Backups** periódicos de la base y probar restaurarlos.
 7. `composer audit` y `npm audit` de vez en cuando; mantener PHP y dependencias actualizadas.
-8. Si usás un proxy/hosting, configurar `TrustProxies` para que las IP y HTTPS se detecten bien.
+8. Si hay un proxy delante (p. ej. Cloudflare con nube naranja), configurar `TRUSTED_PROXIES` en `.env` para que las IP y HTTPS se detecten bien.
+
+Guía paso a paso con archivos listos: [DEPLOY.md](DEPLOY.md).
 
 ## Copias de seguridad
 - Manual: `php artisan app:backup` → guarda `backup-AAAAMMDD-HHMMSS.sql.gz` en `backend/storage/app/private/backups/` (fuera de la parte pública) y conserva las últimas `BACKUP_KEEP` (14 por defecto).
