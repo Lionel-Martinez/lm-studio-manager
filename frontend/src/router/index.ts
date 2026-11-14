@@ -12,6 +12,13 @@ const router = createRouter({
       meta: { guest: true, title: 'Acceso' },
     },
     {
+      // Fuera del layout: es una página limpia pensada para imprimir o guardar como PDF.
+      path: '/comprobantes/:id',
+      name: 'comprobante',
+      component: () => import('@/views/ReceiptView.vue'),
+      meta: { requiresAuth: true, title: 'Comprobante' },
+    },
+    {
       path: '/',
       component: AppLayout,
       meta: { requiresAuth: true },

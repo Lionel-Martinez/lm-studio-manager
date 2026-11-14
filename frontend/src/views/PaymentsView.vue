@@ -2,16 +2,19 @@
 import { onMounted, ref, watch } from 'vue'
 import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
+import { useRouter } from 'vue-router'
 
 import PaymentFormDialog from '@/components/payments/PaymentFormDialog.vue'
 import { useCsvDownload } from '@/composables/useCsvDownload'
 import EmptyState from '@/components/ui/EmptyState.vue'
+import { api, getValidationErrors } from '@/lib/api'
 import { usePaymentsStore } from '@/stores/payments'
 import { paymentStatusLabels, type Payment, type PaymentStatus } from '@/types/payment'
 import { formatCurrency, formatShortDate, toISODate } from '@/utils/dates'
 
 const store = usePaymentsStore()
 const csv = useCsvDownload()
+const router = useRouter()
 
 const filters: { value: PaymentStatus | 'all'; label: string }[] = [
   { value: 'all', label: 'Todos' },
@@ -31,6 +34,22 @@ async function markPaid(payment: Payment) {
     await store.markPaid(payment, toISODate(new Date()))
   } catch {
     actionError.value = 'No se pudo marcar el pago como cobrado.'
+  }
+}
+
+/** Abre el comprobante del pago; si todavía no existe, lo emite primero. */
+async function openReceipt(payment: Payment) {
+  actionError.value = ''
+  try {
+    let id = payment.receipt_id
+    if (!id) {
+      const { data } = await api.post(`/payments/${payment.id}/receipt`)
+      id = data.data.id as number
+      await store.fetchPayments(1)
+    }
+    await router.push({ name: 'comprobante', params: { id } })
+  } catch (e) {
+    actionError.value = getValidationErrors(e)?.payment?.[0] ?? 'No se pudo emitir el comprobante.'
   }
 }
 
@@ -136,6 +155,9 @@ const statusClass = (status: PaymentStatus) =>
             </td>
             <td class="whitespace-nowrap py-3 text-right text-xs">
               <button v-if="payment.status !== 'paid'" type="button" class="mr-3 cursor-pointer underline underline-offset-4 hover:text-app-accent" @click="markPaid(payment)">Marcar cobrado</button>
+              <button v-if="payment.status === 'paid'" type="button" class="mr-3 cursor-pointer underline underline-offset-4 hover:text-app-accent" @click="openReceipt(payment)">
+                {{ payment.receipt_code ? `Comprobante ${payment.receipt_code}${payment.receipt_voided ? ' (anulado)' : ''}` : 'Emitir comprobante' }}
+              </button>
               <button type="button" class="cursor-pointer underline underline-offset-4 hover:text-app-accent" @click="store.openDialog(payment)">Editar</button>
               <button type="button" class="ml-3 cursor-pointer text-app-muted underline underline-offset-4 hover:text-app-danger" @click="toDelete = payment">Eliminar</button>
             </td>

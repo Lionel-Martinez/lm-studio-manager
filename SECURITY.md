@@ -31,5 +31,10 @@
 ## Exportación de datos
 - Botones "Exportar (CSV)" en Clientes, Proyectos y Pagos. Requieren sesión, tienen límite de uso y quedan en la actividad de la cuenta. Los CSV abren bien en Excel en español (separador `;`, acentos) y neutralizan textos que empiezan con `=`, `+`, `-` o `@`.
 
+## Comprobantes de pago
+- Son **internos: no son facturas ni tienen validez fiscal** (así lo dice el propio documento). Se emiten desde un pago cobrado, con número correlativo `C-000001`.
+- Guardan una copia de los datos al emitirse; con un comprobante vigente no se puede cambiar el importe, concepto, fecha o medio de pago, ni eliminar el pago: hay que anularlo (el número anulado no se reutiliza).
+- El encabezado sale de `.env`: `BUSINESS_NAME`, `BUSINESS_TAX_ID`, `BUSINESS_ADDRESS`, `BUSINESS_CONTACT`.
+
 ## Pendiente / ideas
 - Bloqueo por IP a nivel servidor (fail2ban / WAF).

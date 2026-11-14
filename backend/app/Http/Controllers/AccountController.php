@@ -84,6 +84,8 @@ class AccountController extends Controller
         'note.created' => 'Nota creada',
         'note.updated' => 'Nota modificada',
         'note.deleted' => 'Nota eliminada',
+        'receipt.issued' => 'Comprobante emitido',
+        'receipt.voided' => 'Comprobante anulado',
         'payment.created' => 'Pago registrado',
         'payment.updated' => 'Pago modificado',
         'payment.deleted' => 'Pago eliminado',

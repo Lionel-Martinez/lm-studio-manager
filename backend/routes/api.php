@@ -10,6 +10,7 @@ use App\Http\Controllers\NoteController;
 use App\Http\Controllers\TwoFactorController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\ReceiptController;
 use Illuminate\Support\Facades\Route;
 
 // Todas las rutas de la API usan sesión + protección CSRF (grupo "web"):
@@ -45,6 +46,9 @@ Route::middleware('web')->group(function () {
         Route::get('dashboard', DashboardController::class);
         Route::get('payments/summary', [PaymentController::class, 'summary']);
         Route::apiResource('notes', NoteController::class)->only(['index', 'store', 'update', 'destroy']);
+        Route::post('payments/{payment}/receipt', [ReceiptController::class, 'store']);
+        Route::get('receipts/{receipt}', [ReceiptController::class, 'show']);
+        Route::post('receipts/{receipt}/void', [ReceiptController::class, 'void']);
         Route::apiResource('payments', PaymentController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::apiResource('clients.projects', ProjectController::class)->shallow()->only(['store', 'update', 'destroy']);
     });

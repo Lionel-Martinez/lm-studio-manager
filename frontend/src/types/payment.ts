@@ -19,6 +19,25 @@ export interface Payment {
   status: PaymentStatus
   method: string | null
   notes: string | null
+  receipt_id?: number | null
+  receipt_code?: string | null
+  receipt_voided?: boolean | null
+}
+
+/** Comprobante interno de pago (sin validez fiscal). */
+export interface Receipt {
+  id: number
+  code: string
+  client_name: string
+  client_tax_id: string | null
+  concept: string
+  project_name: string | null
+  amount: number
+  paid_at: string
+  method: string | null
+  issued_at: string
+  voided_at: string | null
+  business: { name: string; tax_id: string | null; address: string | null; contact: string | null }
 }
 
 /** Datos que se envían al crear (con `client_id`) o editar un pago. */

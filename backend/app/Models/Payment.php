@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Payment extends Model
@@ -30,6 +31,17 @@ class Payment extends Model
     public function project(): BelongsTo
     {
         return $this->belongsTo(Project::class)->withTrashed();
+    }
+
+    public function receipt(): HasOne
+    {
+        return $this->hasOne(Receipt::class);
+    }
+
+    /** Tiene un comprobante emitido y no anulado. */
+    public function hasActiveReceipt(): bool
+    {
+        return $this->receipt !== null && ! $this->receipt->isVoided();
     }
 
     /** paid | overdue | pending, calculado a partir de las fechas. */

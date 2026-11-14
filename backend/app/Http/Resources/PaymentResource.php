@@ -23,6 +23,9 @@ class PaymentResource extends JsonResource
             'status' => $this->status,
             'method' => $this->method,
             'notes' => $this->notes,
+            'receipt_id' => $this->whenLoaded('receipt', fn () => $this->receipt?->id),
+            'receipt_code' => $this->whenLoaded('receipt', fn () => $this->receipt?->code),
+            'receipt_voided' => $this->whenLoaded('receipt', fn () => $this->receipt?->isVoided()),
         ];
     }
 }
