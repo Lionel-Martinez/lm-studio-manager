@@ -11,6 +11,7 @@ use App\Http\Controllers\TwoFactorController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ReceiptController;
+use App\Http\Controllers\ReportController;
 use Illuminate\Support\Facades\Route;
 
 // Todas las rutas de la API usan sesión + protección CSRF (grupo "web"):
@@ -44,6 +45,7 @@ Route::middleware('web')->group(function () {
         Route::get('geo/countries', [GeoController::class, 'countries']);
         Route::get('geo/regions', [GeoController::class, 'regions']);
         Route::get('dashboard', DashboardController::class);
+        Route::get('reports', ReportController::class);
         Route::get('payments/summary', [PaymentController::class, 'summary']);
         Route::apiResource('notes', NoteController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::post('payments/{payment}/receipt', [ReceiptController::class, 'store']);
