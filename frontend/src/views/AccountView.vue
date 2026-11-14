@@ -3,6 +3,7 @@ import { onMounted, reactive, ref } from 'vue'
 import Button from 'primevue/button'
 import Password from 'primevue/password'
 
+import TwoFactorPanel from '@/components/account/TwoFactorPanel.vue'
 import FormField from '@/components/ui/FormField.vue'
 import SectionBlock from '@/components/ui/SectionBlock.vue'
 import { api, getValidationErrors, type FieldErrors } from '@/lib/api'
@@ -59,6 +60,7 @@ onMounted(loadActivity)
 
 <template>
   <div class="grid gap-12 lg:grid-cols-2">
+    <div class="space-y-12">
     <SectionBlock title="Contraseña" :description="`Sesión iniciada como ${auth.user?.email}.`">
       <form class="max-w-sm space-y-4" novalidate @submit.prevent="submit">
         <p v-if="generalError" class="border-l-2 border-app-danger bg-app-accent-soft px-3 py-2 text-sm text-app-danger" role="alert">
@@ -88,6 +90,9 @@ onMounted(loadActivity)
         <Button type="submit" label="Cambiar contraseña" :loading="saving" />
       </form>
     </SectionBlock>
+
+    <TwoFactorPanel />
+    </div>
 
     <SectionBlock title="Actividad reciente" description="Accesos, intentos fallidos y cambios en tus datos.">
       <p v-if="activityError" class="text-sm text-app-danger" role="alert">No se pudo cargar la actividad.</p>

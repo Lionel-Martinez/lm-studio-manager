@@ -7,6 +7,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\GeoController;
 use App\Http\Controllers\NoteController;
+use App\Http\Controllers\TwoFactorController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProjectController;
 use Illuminate\Support\Facades\Route;
@@ -18,12 +19,19 @@ Route::middleware('web')->group(function () {
     Route::get('csrf', fn () => response()->noContent());
 
     Route::post('login', [AuthController::class, 'login']);
+    Route::post('login/two-factor', [AuthController::class, 'twoFactorChallenge'])->middleware('throttle:20,1');
 
     Route::middleware(['auth', 'throttle:120,1'])->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
         Route::get('user', [AuthController::class, 'user']);
 
         Route::put('account/password', [AccountController::class, 'updatePassword'])->middleware('throttle:6,1');
+        Route::middleware('throttle:10,1')->prefix('account/two-factor')->group(function () {
+            Route::post('setup', [TwoFactorController::class, 'setup']);
+            Route::post('confirm', [TwoFactorController::class, 'confirm']);
+            Route::post('recovery-codes', [TwoFactorController::class, 'regenerateRecoveryCodes']);
+            Route::delete('/', [TwoFactorController::class, 'disable']);
+        });
         Route::get('account/activity', [AccountController::class, 'activity']);
 
         Route::apiResource('clients', ClientController::class);

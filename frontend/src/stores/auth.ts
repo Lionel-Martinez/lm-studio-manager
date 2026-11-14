@@ -23,10 +23,24 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  /** Los errores (422 credenciales, 429 bloqueo) se propagan al formulario. */
-  async function login(email: string, password: string) {
+  /**
+   * Primer paso. Devuelve 'two_factor' si la cuenta pide un código (todavía sin sesión).
+   * Los errores (422 credenciales, 429 bloqueo) se propagan al formulario.
+   */
+  async function login(email: string, password: string): Promise<'ok' | 'two_factor'> {
     await api.get('/csrf')
-    const { data } = await api.post('/login', { email, password })
+    const response = await api.post('/login', { email, password })
+
+    if (response.status === 202) return 'two_factor'
+
+    user.value = response.data.data
+    checked.value = true
+    return 'ok'
+  }
+
+  /** Segundo paso: código de la app o código de recuperación. */
+  async function verifyTwoFactor(payload: { code?: string; recovery_code?: string }) {
+    const { data } = await api.post('/login/two-factor', payload)
     user.value = data.data
     checked.value = true
   }
@@ -45,5 +59,5 @@ export const useAuthStore = defineStore('auth', () => {
     checked.value = true
   }
 
-  return { user, checked, isLoggedIn, fetchUser, login, logout, clear }
+  return { user, checked, isLoggedIn, fetchUser, login, verifyTwoFactor, logout, clear }
 })

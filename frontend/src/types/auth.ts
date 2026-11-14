@@ -2,6 +2,7 @@ export interface AuthUser {
   id: number
   name: string
   email: string
+  two_factor_enabled: boolean
 }
 
 export interface ActivityEntry {
