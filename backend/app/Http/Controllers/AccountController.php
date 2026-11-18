@@ -25,16 +25,49 @@ class AccountController extends Controller
         $user = $request->user();
         $user->forceFill(['password' => $data['password']])->save();
 
-        // Cierra las demás sesiones abiertas (otros navegadores o dispositivos).
-        if (config('session.driver') === 'database') {
-            DB::table(config('session.table', 'sessions'))
-                ->where('user_id', $user->id)
-                ->where('id', '!=', $request->session()->getId())
-                ->delete();
+        // Cierra las demás sesiones abiertas (otros navegadores) y los demás dispositivos con la app.
+        if ($request->hasSession()) {
+            if (config('session.driver') === 'database') {
+                DB::table(config('session.table', 'sessions'))
+                    ->where('user_id', $user->id)
+                    ->where('id', '!=', $request->session()->getId())
+                    ->delete();
+            }
+            $request->session()->regenerate();
         }
-        $request->session()->regenerate();
+
+        // Con la app, el dispositivo actual sigue conectado; con el navegador se cierran todos.
+        $user->apiTokens()->when($request->attributes->get('api_token'), fn ($q, $current) => $q->where('id', '!=', $current->id))->delete();
 
         AuditLog::record('auth.password_changed');
+
+        return response()->noContent();
+    }
+
+    /** Dispositivos con la app instalada que tienen la sesión abierta. */
+    public function devices(Request $request): JsonResponse
+    {
+        $current = $request->attributes->get('api_token')?->id;
+
+        $devices = $request->user()->apiTokens()->orderByDesc('last_used_at')->get()->map(fn ($t) => [
+            'id' => $t->id,
+            'name' => $t->name,
+            'platform' => $t->platform,
+            'last_used_at' => $t->last_used_at?->toIso8601String(),
+            'created_at' => $t->created_at->toIso8601String(),
+            'current' => $t->id === $current,
+        ]);
+
+        return response()->json(['data' => $devices]);
+    }
+
+    /** Cierra la sesión de un dispositivo (por ejemplo, un celular perdido). */
+    public function revokeDevice(Request $request, int $device): Response
+    {
+        $token = $request->user()->apiTokens()->findOrFail($device);
+
+        AuditLog::record('device.revoked', null, ['device' => $token->name]);
+        $token->delete();
 
         return response()->noContent();
     }
@@ -73,6 +106,7 @@ class AccountController extends Controller
         'auth.two_factor_disabled' => 'Verificación en dos pasos desactivada',
         'auth.two_factor_failed' => 'Código de verificación incorrecto',
         'auth.recovery_code_used' => 'Se usó un código de recuperación',
+        'device.revoked' => 'Dispositivo desconectado',
         'auth.recovery_codes_regenerated' => 'Códigos de recuperación renovados',
         'client.created' => 'Cliente creado',
         'client.updated' => 'Cliente modificado',

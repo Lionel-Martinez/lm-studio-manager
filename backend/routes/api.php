@@ -9,6 +9,7 @@ use App\Http\Controllers\ExportController;
 use App\Http\Controllers\GeoController;
 use App\Http\Controllers\GeographyOverviewController;
 use App\Http\Controllers\NoteController;
+use App\Http\Controllers\TokenAuthController;
 use App\Http\Controllers\TwoFactorController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProjectController;
@@ -19,17 +20,8 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ServiceOverviewController;
 use Illuminate\Support\Facades\Route;
 
-// Todas las rutas de la API usan sesión + protección CSRF (grupo "web"):
-// el navegador guarda una cookie HttpOnly y nunca ve un token de acceso.
-Route::middleware('web')->group(function () {
-    // Entrega la cookie XSRF-TOKEN antes de iniciar sesión.
-    Route::get('csrf', fn () => response()->noContent());
-
-    Route::post('login', [AuthController::class, 'login']);
-    Route::post('login/two-factor', [AuthController::class, 'twoFactorChallenge'])->middleware('throttle:20,1');
-
-    Route::middleware(['auth', 'throttle:120,1'])->group(function () {
-        Route::post('logout', [AuthController::class, 'logout']);
+// Rutas protegidas: son las mismas para el navegador (cookie) y para las apps (token).
+$protected = function () {
         Route::get('user', [AuthController::class, 'user']);
 
         Route::put('account/password', [AccountController::class, 'updatePassword'])->middleware('throttle:6,1');
@@ -40,6 +32,8 @@ Route::middleware('web')->group(function () {
             Route::delete('/', [TwoFactorController::class, 'disable']);
         });
         Route::get('account/activity', [AccountController::class, 'activity']);
+        Route::get('account/devices', [AccountController::class, 'devices']);
+        Route::delete('account/devices/{device}', [AccountController::class, 'revokeDevice'])->whereNumber('device');
 
         Route::post('clients/{client}/deactivate', [ClientController::class, 'deactivate']);
         Route::post('clients/{client}/reactivate', [ClientController::class, 'reactivate']);
@@ -68,5 +62,31 @@ Route::middleware('web')->group(function () {
         Route::post('projects/{project}/pricing/preview', [ProjectPricingController::class, 'preview']);
         Route::put('projects/{project}/pricing', [ProjectPricingController::class, 'update']);
         Route::apiResource('clients.projects', ProjectController::class)->shallow()->only(['store', 'update', 'destroy']);
+};
+
+// Navegador: sesión + protección CSRF (grupo "web"). El navegador guarda una cookie HttpOnly
+// y nunca ve un token de acceso.
+Route::middleware('web')->group(function () use ($protected) {
+    // Entrega la cookie XSRF-TOKEN antes de iniciar sesión.
+    Route::get('csrf', fn () => response()->noContent());
+
+    Route::post('login', [AuthController::class, 'login']);
+    Route::post('login/two-factor', [AuthController::class, 'twoFactorChallenge'])->middleware('throttle:20,1');
+
+    Route::middleware(['auth', 'throttle:120,1'])->group(function () use ($protected) {
+        Route::post('logout', [AuthController::class, 'logout']);
+        $protected();
+    });
+});
+
+// Apps de escritorio y celular: mismo contenido bajo /api/app, con token por dispositivo
+// ("Authorization: Bearer"). Sin cookies ni sesión, así que no hay CSRF que verificar.
+Route::prefix('app')->name('app.')->group(function () use ($protected) {
+    Route::post('login', [TokenAuthController::class, 'login'])->middleware('throttle:20,1');
+    Route::post('login/two-factor', [TokenAuthController::class, 'twoFactorChallenge'])->middleware('throttle:20,1');
+
+    Route::middleware(['auth.token', 'throttle:120,1'])->group(function () use ($protected) {
+        Route::post('logout', [TokenAuthController::class, 'logout']);
+        $protected();
     });
 });

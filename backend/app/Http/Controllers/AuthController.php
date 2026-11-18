@@ -8,57 +8,16 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\RateLimiter;
-use App\Support\Totp;
-use Illuminate\Support\Str;
+use App\Support\LoginChecks;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
-    private const MAX_ATTEMPTS = 5;
-
-    /** Hash de relleno (bcrypt, costo 12) para que un correo inexistente tarde lo mismo que uno real. */
-    private const DUMMY_HASH = '$2y$12$mtiknmxcDolCbhE4.pkTKubiunpmi6yZhv5vw0ZO5xLGlsDzKLht6';
-
     private const PENDING_KEY = 'two_factor.pending';
 
     public function login(Request $request): JsonResponse
     {
-        $credentials = $request->validate([
-            'email' => ['required', 'string', 'email', 'max:255'],
-            'password' => ['required', 'string', 'max:255'],
-        ]);
-
-        $email = Str::lower($credentials['email']);
-        $throttleKey = $email.'|'.$request->ip();
-
-        if (RateLimiter::tooManyAttempts($throttleKey, self::MAX_ATTEMPTS)) {
-            AuditLog::record('auth.lockout', null, ['email' => $email]);
-
-            throw ValidationException::withMessages([
-                'email' => 'Demasiados intentos. Esperá '.ceil(RateLimiter::availableIn($throttleKey) / 60).' minuto(s) e intentá de nuevo.',
-            ])->status(429);
-        }
-
-        $user = User::where('email', $email)->first();
-
-        // Siempre se calcula un hash (contra uno de relleno si el correo no existe)
-        // para no revelar qué cuentas existen por el tiempo de respuesta.
-        $matches = Hash::check($credentials['password'], $user?->password ?? self::DUMMY_HASH);
-        $valid = $user !== null && $matches;
-
-        if (! $user || ! $valid) {
-            RateLimiter::hit($throttleKey, 15 * 60);
-            AuditLog::record('auth.failed', null, ['email' => $email]);
-
-            // Mismo mensaje exista o no el correo: no revela qué cuentas existen.
-            throw ValidationException::withMessages([
-                'email' => 'Las credenciales no son correctas.',
-            ]);
-        }
-
-        RateLimiter::clear($throttleKey);
+        $user = LoginChecks::credentials($request);
 
         if ($user->hasTwoFactorEnabled()) {
             // Contraseña correcta, pero falta el segundo paso: todavía NO se inicia sesión.
@@ -87,41 +46,20 @@ class AuthController extends Controller
             throw ValidationException::withMessages(['code' => 'La verificación venció. Volvé a ingresar tu correo y contraseña.'])->status(401);
         }
 
-        $user = User::find($pending['user_id']);
-        $throttleKey = 'two-factor|'.$pending['user_id'].'|'.$request->ip();
-
-        if (! $user || RateLimiter::tooManyAttempts($throttleKey, self::MAX_ATTEMPTS)) {
-            AuditLog::record('auth.lockout', null, ['email' => $user?->email, 'step' => 'two_factor']);
-            $request->session()->forget(self::PENDING_KEY);
-
-            throw ValidationException::withMessages(['code' => 'Demasiados intentos. Volvé a empezar en unos minutos.'])->status(429);
-        }
-
-        $ok = false;
-
-        if (! empty($data['code'])) {
-            $step = Totp::verify($user->two_factor_secret, $data['code'], 1, $user->two_factor_last_step);
-
-            if ($step !== null) {
-                $user->forceFill(['two_factor_last_step' => $step])->save();
-                $ok = true;
+        try {
+            LoginChecks::secondFactor($request, User::find($pending['user_id']), $data);
+        } catch (ValidationException $e) {
+            // Con demasiados intentos hay que empezar de nuevo con la contraseña.
+            if ($e->status === 429) {
+                $request->session()->forget(self::PENDING_KEY);
             }
-        } elseif ($user->consumeRecoveryCode($data['recovery_code'])) {
-            $ok = true;
-            AuditLog::record('auth.recovery_code_used', null, [], $user->id);
+
+            throw $e;
         }
 
-        if (! $ok) {
-            RateLimiter::hit($throttleKey, 15 * 60);
-            AuditLog::record('auth.two_factor_failed', null, ['email' => $user->email], $user->id);
-
-            throw ValidationException::withMessages(['code' => 'El código no es correcto.']);
-        }
-
-        RateLimiter::clear($throttleKey);
         $request->session()->forget(self::PENDING_KEY);
 
-        return $this->completeLogin($request, $user);
+        return $this->completeLogin($request, User::findOrFail($pending['user_id']));
     }
 
     private function completeLogin(Request $request, User $user): JsonResponse
