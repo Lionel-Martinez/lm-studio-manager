@@ -14,9 +14,16 @@
     "lint": "run-s \"lint:*\"",
     "lint:oxlint": "oxlint . --fix",
     "lint:eslint": "eslint . --fix --cache",
-    "format": "prettier --write --experimental-cli src/"
+    "format": "prettier --write --experimental-cli src/",
+    "tauri": "tauri",
+    "cap:sync": "npm run build-only -- --mode native && cap sync",
+    "build:linux": "tauri build",
+    "build:android": "npm run cap:sync && cd android && ./gradlew assembleDebug"
   },
   "dependencies": {
+    "@capacitor/android": "^8.6.2",
+    "@capacitor/core": "^8.6.2",
+    "@capacitor/ios": "^8.6.2",
     "@fontsource-variable/newsreader": "^5.3.0",
     "@fontsource-variable/public-sans": "^5.3.0",
     "@primeuix/themes": "^2.0.3",
@@ -35,7 +42,9 @@
     "vue-router": "^5.3.1"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.6.2",
     "@tailwindcss/vite": "^4.3.4",
+    "@tauri-apps/cli": "^2.12.6",
     "@tsconfig/node24": "^24.0.5",
     "@types/node": "^24.13.4",
     "@types/qrcode": "^1.5.6",

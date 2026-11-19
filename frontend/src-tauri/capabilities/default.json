@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Permisos mínimos: la app solo muestra su propia ventana. La red la maneja la propia página (fetch al servidor).",
+  "windows": ["main"],
+  "permissions": []
+}
