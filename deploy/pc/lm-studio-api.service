@@ -1,0 +1,18 @@
+# Servidor de LM Studio (Laravel). Instalar en /etc/systemd/system/ — ver docs/APPS.md.
+# Reemplazá TU_USUARIO y la ruta del proyecto.
+[Unit]
+Description=LM Studio - API
+After=network-online.target mysql.service mariadb.service
+Wants=network-online.target
+
+[Service]
+User=TU_USUARIO
+WorkingDirectory=/home/TU_USUARIO/lm-studio-manager/backend
+# Escucha solo en la propia PC: el acceso desde afuera lo da «tailscale serve» (HTTPS, solo tu red).
+ExecStart=/usr/bin/php artisan serve --host=127.0.0.1 --port=8000
+Environment=PHP_CLI_SERVER_WORKERS=4
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

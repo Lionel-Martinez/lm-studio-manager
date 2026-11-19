@@ -3,6 +3,7 @@
 ## Qué protege la aplicación
 - **Acceso privado:** toda la API (`/api/*`) exige sesión iniciada. No hay registro público; los usuarios se crean con `php artisan app:create-user correo@dominio.com`.
 - **Sesión por cookie HttpOnly** (el navegador nunca maneja tokens) + **protección CSRF** (cookie `XSRF-TOKEN` / encabezado `X-XSRF-TOKEN`).
+- **Apps nativas (Linux/Android):** usan un token por dispositivo (`Authorization: Bearer`, rutas `/api/app/*`, sin cookies ni CSRF). Se guarda solo su hash SHA-256, vence a los 90 días sin uso, se puede revocar desde *Cuenta → Dispositivos* y se revoca al cambiar la contraseña. Login con 2FA y bloqueo por intentos igual que en la web. El token queda en el almacenamiento privado de la app; la app solo acepta servidores `https`. El acceso al servidor se limita a tu red Tailscale (no usar `tailscale funnel`). Ver [docs/APPS.md](docs/APPS.md).
 - **Contraseñas** con hash (bcrypt), mínimo 12 caracteres con mayúsculas, minúsculas, números y símbolos.
 - **Login a prueba de fuerza bruta:** 5 intentos fallidos por correo+IP bloquean 15 min. El error es el mismo exista o no el correo.
 - **Sesión nueva al entrar y destruida al salir**; vence tras 60 min sin actividad; el contenido de la sesión se guarda cifrado.

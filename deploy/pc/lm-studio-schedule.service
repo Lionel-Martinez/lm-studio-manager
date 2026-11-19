@@ -1,0 +1,14 @@
+# Tareas programadas de Laravel (limpieza de auditoría, etc.). Instalar en /etc/systemd/system/.
+[Unit]
+Description=LM Studio - tareas programadas
+After=lm-studio-api.service
+
+[Service]
+User=TU_USUARIO
+WorkingDirectory=/home/TU_USUARIO/lm-studio-manager/backend
+ExecStart=/usr/bin/php artisan schedule:work
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
