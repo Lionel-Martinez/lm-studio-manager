@@ -97,7 +97,8 @@ class TwoFactorTest extends TestCase
         $this->assertGuest();
         $this->getJson('/api/clients')->assertUnauthorized();
 
-        $this->postJson('/api/login/two-factor', ['code' => Totp::code($secret)])
+        // El código que activó el segundo paso ya está usado: se prueba con el del intervalo siguiente (la ventana admite ±1).
+        $this->postJson('/api/login/two-factor', ['code' => Totp::code($secret, time() + 30)])
             ->assertOk()->assertJsonPath('data.two_factor_enabled', true);
 
         $this->assertAuthenticatedAs($user);

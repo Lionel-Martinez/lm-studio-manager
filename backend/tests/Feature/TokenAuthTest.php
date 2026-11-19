@@ -23,7 +23,7 @@ class TokenAuthTest extends TestCase
 
     private function login(array $extra = []): \Illuminate\Testing\TestResponse
     {
-        return $this->postJson('/api/app/login', ['email' => 'lionel@example.com', 'password' => self::PASSWORD, 'device_name' => 'Celular de Lionel', 'platform' => 'android'] + $extra);
+        return $this->postJson('/api/app/login', array_merge(['email' => 'lionel@example.com', 'password' => self::PASSWORD, 'device_name' => 'Celular de Lionel', 'platform' => 'android'], $extra));
     }
 
     private function bearer(string $token): array

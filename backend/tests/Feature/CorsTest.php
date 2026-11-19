@@ -31,12 +31,17 @@ class CorsTest extends TestCase
 
     public function test_otro_origen_no_recibe_permiso(): void
     {
-        $this->getJson('/api/csrf', ['Origin' => 'https://sitio-malo.example'])
-            ->assertHeaderMissing('Access-Control-Allow-Origin');
+        $malo = 'https://sitio-malo.example';
 
-        $this->call('OPTIONS', '/api/login', [], [], [], [
-            'HTTP_ORIGIN' => 'https://sitio-malo.example',
+        // Con un único origen permitido, Laravel responde siempre con ese origen (nunca con el ajeno),
+        // y el navegador bloquea la respuesta porque no coincide. Lo que no debe pasar es que se refleje el ajeno.
+        $response = $this->getJson('/api/csrf', ['Origin' => $malo]);
+        $this->assertNotSame($malo, $response->headers->get('Access-Control-Allow-Origin'));
+
+        $preflight = $this->call('OPTIONS', '/api/login', [], [], [], [
+            'HTTP_ORIGIN' => $malo,
             'HTTP_ACCESS_CONTROL_REQUEST_METHOD' => 'POST',
-        ])->assertHeaderMissing('Access-Control-Allow-Origin');
+        ]);
+        $this->assertNotSame($malo, $preflight->headers->get('Access-Control-Allow-Origin'));
     }
 }
