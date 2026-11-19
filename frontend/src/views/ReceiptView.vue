@@ -6,6 +6,7 @@ import Button from 'primevue/button'
 import { api } from '@/lib/api'
 import type { Receipt } from '@/types/payment'
 import { formatCurrency } from '@/utils/dates'
+import { isMobileApp } from '@/lib/platform'
 
 const route = useRoute()
 const router = useRouter()
@@ -61,7 +62,7 @@ async function voidReceipt() {
             <Button label="No" severity="secondary" text size="small" :disabled="voiding" @click="confirmingVoid = false" />
           </template>
         </template>
-        <Button label="Imprimir o guardar PDF" size="small" @click="print" />
+        <Button v-if="!isMobileApp" label="Imprimir o guardar PDF" size="small" @click="print" />
       </div>
     </div>
 

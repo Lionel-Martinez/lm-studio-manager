@@ -3,6 +3,7 @@ import { onMounted, reactive, ref } from 'vue'
 import Button from 'primevue/button'
 import Password from 'primevue/password'
 
+import DevicesPanel from '@/components/account/DevicesPanel.vue'
 import TwoFactorPanel from '@/components/account/TwoFactorPanel.vue'
 import FormField from '@/components/ui/FormField.vue'
 import SectionBlock from '@/components/ui/SectionBlock.vue'
@@ -93,6 +94,8 @@ onMounted(loadActivity)
 
     <TwoFactorPanel />
     </div>
+
+    <DevicesPanel />
 
     <SectionBlock title="Actividad reciente" description="Accesos, intentos fallidos y cambios en tus datos.">
       <p v-if="activityError" class="text-sm text-app-danger" role="alert">No se pudo cargar la actividad.</p>

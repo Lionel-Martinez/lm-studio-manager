@@ -1,5 +1,8 @@
 import axios, { isAxiosError } from 'axios'
 
+import { getServer, getToken } from '@/lib/nativeSession'
+import { isNative } from '@/lib/platform'
+
 /**
  * Cliente HTTP único de la aplicación.
  * En desarrollo, Vite redirige /api al backend de Laravel (ver vite.config.ts).
@@ -17,6 +20,26 @@ export const api = axios.create({
   withCredentials: true,
   withXSRFToken: true,
 })
+
+/** Mientras no se elija un servidor, la app nativa no puede hacer pedidos. */
+export const NO_SERVER = 'NO_SERVER'
+
+// App nativa: la dirección del servidor se elige al instalarla y la sesión es un token por dispositivo
+// (sin cookies ni CSRF). Las rutas son las mismas, bajo /api/app.
+if (isNative) {
+  api.defaults.withCredentials = false
+  api.defaults.withXSRFToken = false
+
+  api.interceptors.request.use((config) => {
+    const server = getServer()
+    if (!server) return Promise.reject(new Error(NO_SERVER))
+
+    config.baseURL = `${server}/api/app`
+    const token = getToken()
+    if (token) config.headers.set('Authorization', `Bearer ${token}`)
+    return config
+  })
+}
 
 export type FieldErrors = Record<string, string[]>
 

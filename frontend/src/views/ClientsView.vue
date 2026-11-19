@@ -9,6 +9,7 @@ import Textarea from 'primevue/textarea'
 import { useCsvDownload } from '@/composables/useCsvDownload'
 import ProjectPricingDialog from '@/components/clients/ProjectPricingDialog.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
+import { isMobileApp } from '@/lib/platform'
 import { useClientsStore } from '@/stores/clients'
 import { deactivationReasonLabels, type Client, type ClientProject, type DeactivationReason } from '@/types/client'
 import { formatCurrency, formatShortDate } from '@/utils/dates'
@@ -145,10 +146,10 @@ const formatDate = (value: string | null) => (value ? formatShortDate(value) : '
       <div class="flex flex-wrap items-center gap-4 text-xs text-app-muted">
         <Select v-model="store.statusFilter" :options="statusOptions" option-label="label" option-value="value" aria-label="Filtrar por estado" placeholder="Todos los estados" size="small" />
         <p v-if="store.meta">{{ store.meta.total }} {{ store.meta.total === 1 ? 'cliente' : 'clientes' }}</p>
-        <button type="button" class="cursor-pointer underline underline-offset-4 hover:text-app-text" :disabled="csv.downloading.value !== null" @click="csv.download('clients')">
+        <button v-if="!isMobileApp" type="button" class="cursor-pointer underline underline-offset-4 hover:text-app-text" :disabled="csv.downloading.value !== null" @click="csv.download('clients')">
           Exportar clientes (CSV)
         </button>
-        <button type="button" class="cursor-pointer underline underline-offset-4 hover:text-app-text" :disabled="csv.downloading.value !== null" @click="csv.download('projects')">
+        <button v-if="!isMobileApp" type="button" class="cursor-pointer underline underline-offset-4 hover:text-app-text" :disabled="csv.downloading.value !== null" @click="csv.download('projects')">
           Exportar proyectos (CSV)
         </button>
       </div>

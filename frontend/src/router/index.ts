@@ -1,10 +1,20 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHashHistory, createWebHistory } from 'vue-router'
 import AppLayout from '@/components/layout/AppLayout.vue'
+import { getServer } from '@/lib/nativeSession'
+import { isNative } from '@/lib/platform'
 import { useAuthStore } from '@/stores/auth'
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  // En las apps nativas se sirve desde archivos locales: la ruta va después del #.
+  history: isNative ? createWebHashHistory() : createWebHistory(import.meta.env.BASE_URL),
   routes: [
+    {
+      // Solo apps nativas: dirección del servidor al que se conecta el dispositivo.
+      path: '/servidor',
+      name: 'servidor',
+      component: () => import('@/views/ServerSetupView.vue'),
+      meta: { title: 'Servidor' },
+    },
     {
       path: '/login',
       name: 'login',
@@ -121,6 +131,13 @@ const router = createRouter({
 // Todo lo que no sea el login exige sesión iniciada.
 router.beforeEach(async (to) => {
   const auth = useAuthStore()
+
+  if (isNative) {
+    if (!getServer() && to.name !== 'servidor') return { name: 'servidor' }
+    if (to.name === 'servidor') return
+  } else if (to.name === 'servidor') {
+    return { path: '/' }
+  }
 
   if (!auth.checked) {
     try {

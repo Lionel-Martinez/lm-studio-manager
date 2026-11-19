@@ -8,6 +8,7 @@ import PaymentFormDialog from '@/components/payments/PaymentFormDialog.vue'
 import { useCsvDownload } from '@/composables/useCsvDownload'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import { api, getValidationErrors } from '@/lib/api'
+import { isMobileApp } from '@/lib/platform'
 import { usePaymentsStore } from '@/stores/payments'
 import { paymentStatusLabels, type Payment, type PaymentStatus } from '@/types/payment'
 import { formatCurrency, formatShortDate, toISODate } from '@/utils/dates'
@@ -108,7 +109,7 @@ const statusClass = (status: PaymentStatus) =>
       </div>
 
       <div class="flex items-center gap-4">
-        <button type="button" class="cursor-pointer text-xs text-app-muted underline underline-offset-4 hover:text-app-text" :disabled="csv.downloading.value !== null" @click="csv.download('payments')">
+        <button v-if="!isMobileApp" type="button" class="cursor-pointer text-xs text-app-muted underline underline-offset-4 hover:text-app-text" :disabled="csv.downloading.value !== null" @click="csv.download('payments')">
           Exportar (CSV)
         </button>
         <Button label="Nuevo pago" @click="store.openDialog()" />

@@ -6,6 +6,7 @@ import InputText from 'primevue/inputtext'
 import Password from 'primevue/password'
 
 import FormField from '@/components/ui/FormField.vue'
+import { isNative } from '@/lib/platform'
 import { getStatus, getValidationErrors } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth'
 
@@ -123,6 +124,10 @@ function backToCredentials() {
         </FormField>
 
         <Button type="submit" label="Entrar" :loading="loading" fluid />
+
+        <p v-if="isNative" class="text-center text-xs text-app-muted">
+          <RouterLink :to="{ name: 'servidor' }" class="underline underline-offset-4 hover:text-app-text">Cambiar servidor</RouterLink>
+        </p>
       </form>
 
       <form v-else class="mt-10 space-y-5" novalidate @submit.prevent="submitCode">
