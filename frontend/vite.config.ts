@@ -6,7 +6,10 @@ import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
 import tailwindcss from '@tailwindcss/vite'
 
-export default defineConfig({
+// `--mode native` (apps de escritorio y celular) fija VITE_TARGET sin depender de un archivo .env,
+// porque el .gitignore de la raíz ignora los .env.* y el archivo nunca llegaría al repositorio.
+export default defineConfig(({ mode }) => ({
+  define: mode === 'native' ? { 'import.meta.env.VITE_TARGET': JSON.stringify('native') } : {},
   plugins: [
     vue(),
     vueDevTools(),
@@ -26,4 +29,4 @@ export default defineConfig({
       },
     },
   },
-})
+}))
